@@ -37,6 +37,15 @@ func runCommand(cmd string) error {
 	return err
 }
 
+func ensureCommands(cmds []string) error {
+	for _, c := range cmds {
+		if err := runCommand(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func getIPAddr() (addr string) {
 	addrs, _ := net.InterfaceAddrs()
 	for _, i := range addrs {
@@ -131,6 +140,15 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 
 func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 	var cmd string
+	cmds := []string{
+		"sysctl -w net.ipv4.ip_forward=1",
+		"sysctl -w net.ipv4.vs.conntrack=1",
+	}
+
+	if err := ensureCommands(cmds); err != nil {
+		log.Fatal(err)
+	}
+
 	if output, err := exec.Command("ipvsadm", "-A",
 		"-t", i.Addr+":"+i.Port,
 		"-s", i.Scheduler,
@@ -146,7 +164,7 @@ func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 
 	localAddr := getIPAddr()
 	// % iptables -t nat -A POSTROUTING -m ipvs --vaddr 192.168.100.30/32 --vport 80 -j SNAT --to-source 192.168.10.10
-	rule := "POSTROUTING -m ipvs --vaddr " + i.Addr + " --vport " + i.Port + " -j SNAT --to " + localAddr
+	rule := "POSTROUTING -m ipvs --vaddr " + i.Addr + "/32 --vport " + i.Port + " -j SNAT --to " + localAddr
 	cmd = "iptables -t nat -A " + rule
 	runCommand(cmd)
 	defer func() {
