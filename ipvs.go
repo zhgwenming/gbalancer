@@ -146,8 +146,13 @@ func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 
 	localAddr := getIPAddr()
 	// % iptables -t nat -A POSTROUTING -m ipvs --vaddr 192.168.100.30/32 --vport 80 -j SNAT --to-source 192.168.10.10
-	cmd = "iptables -t nat -A POSTROUTING -m ipvs --vaddr " + i.Addr + " --vport " + i.Port + " -j SNAT --to " + localAddr
+	rule := "POSTROUTING -m ipvs --vaddr " + i.Addr + " --vport " + i.Port + " -j SNAT --to " + localAddr
+	cmd = "iptables -t nat -A " + rule
 	runCommand(cmd)
+	defer func() {
+		cmd = "iptables -t nat -D " + rule
+		runCommand(cmd)
+	}()
 
 	i.eventLoop(status)
 }
