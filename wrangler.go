@@ -30,6 +30,8 @@ func NewWrangler(config Configuration, back chan<- map[string]int) *Wrangler {
 		hexec = NewHealthTcp()
 	case "http":
 		hexec = NewHealthHTTP()
+	case "ext":
+		hexec = NewHealthExt(config.ExtCommand)
 	default:
 		log.Printf("Unknown healthy monitor: %s", config.Service)
 		os.Exit(1)

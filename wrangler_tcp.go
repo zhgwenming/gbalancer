@@ -3,7 +3,6 @@
 // Use of this source code is governed by a GPLv3
 // Author: Wenming Zhang <zhgwenming@gmail.com>
 
-
 package main
 
 import (

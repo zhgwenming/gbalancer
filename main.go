@@ -14,12 +14,13 @@ import (
 )
 
 type Configuration struct {
-	Service string
-	User    string
-	Pass    string
-	Addr    string
-	Port    string
-	Backend []string
+	Service    string
+	ExtCommand string
+	User       string
+	Pass       string
+	Addr       string
+	Port       string
+	Backend    []string
 }
 
 type Request struct {

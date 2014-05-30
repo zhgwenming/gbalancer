@@ -8,30 +8,30 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
+	"os/exec"
 )
 
-type HealthHTTP struct {
-	Director []string
+type HealthExt struct {
+	Director   []string
+	ExtCommand string
 }
 
-func NewHealthHTTP() *HealthHTTP {
+func NewHealthExt(cmd string) *HealthExt {
 	dir := make([]string, 0, MaxBackends)
-	return &HealthHTTP{dir}
+	return &HealthExt{dir, cmd}
 }
 
-func (h *HealthHTTP) AddDirector(backend string) error {
+func (h *HealthExt) AddDirector(backend string) error {
 	h.Director = append(h.Director, backend)
 	return fmt.Errorf("Error to add backend %s\n", backend)
 }
 
-func httpProbe(addr string) error {
-	_, err := http.Get("http://" + addr + "/")
-	return err
+func extProbe(cmd, addr string) error {
+	return exec.Command(cmd, addr).Run()
 }
 
 // check the backend status
-func (t *HealthHTTP) BuildActiveBackends() (map[string]int, error) {
+func (t *HealthExt) BuildActiveBackends() (map[string]int, error) {
 	backends := make(map[string]int, MaxBackends)
 
 	if len(t.Director) == 0 {
@@ -45,14 +45,14 @@ func (t *HealthHTTP) BuildActiveBackends() (map[string]int, error) {
 
 	results := make(chan backendStatus, MaxBackends)
 
-	probe := func(addr string) {
-		err := httpProbe(addr)
+	probe := func(cmd, addr string) {
+		err := extProbe(cmd, addr)
 		results <- backendStatus{addr, err}
 	}
 
 	numWorkers := 0
 	for _, addr := range t.Director {
-		go probe(addr)
+		go probe(t.ExtCommand, addr)
 		numWorkers++
 	}
 	for i := 0; i < numWorkers; i++ {
@@ -61,7 +61,7 @@ func (t *HealthHTTP) BuildActiveBackends() (map[string]int, error) {
 			backends[r.backend] = FlagUp
 			//log.Printf("host: %s\n", r.backend)
 		} else {
-			log.Printf("http error: %s", r.err)
+			log.Printf("ext error: %s", r.err)
 		}
 	}
 	//log.Printf("Active server: %v\n", backends)
