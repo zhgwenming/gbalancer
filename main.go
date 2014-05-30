@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 )
 
 type Configuration struct {
@@ -37,6 +38,7 @@ type Forwarder struct {
 }
 
 var (
+	wgroup     sync.WaitGroup
 	log        *ilog.Logger
 	sigChan    = make(chan os.Signal, 1)
 	configFile = flag.String("config", "gbalancer.json", "Configuration file")
@@ -89,12 +91,14 @@ func main() {
 
 	go wgl.Monitor()
 
+	done := make(chan int, 1)
 	if *ipvsMode {
+		wgroup.Add(1)
 		if *ipvsRemote {
-			ipvs := NewIPvs(config.Addr, config.Port, "wlc")
+			ipvs := NewIPvs(config.Addr, config.Port, "wlc", done)
 			go ipvs.RemoteSchedule(status)
 		} else {
-			ipvs := NewIPvs(IPvsLocalAddr, config.Port, "sh")
+			ipvs := NewIPvs(IPvsLocalAddr, config.Port, "sh", done)
 			go ipvs.LocalSchedule(status)
 		}
 	} else {
@@ -124,6 +128,8 @@ func main() {
 	}
 	for sig := range sigChan {
 		log.Printf("captured %v, exiting..", sig)
+		done <- 1
+		wgroup.Wait()
 		return
 	}
 

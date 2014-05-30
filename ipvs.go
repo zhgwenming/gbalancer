@@ -17,13 +17,14 @@ type IPvs struct {
 	Addr      string
 	Port      string
 	Scheduler string
+	done      <-chan int
 	backends  map[string]string
 	Persist   int
 }
 
-func NewIPvs(addr, port, sch string) *IPvs {
+func NewIPvs(addr, port, sch string, done <-chan int) *IPvs {
 	backends := make(map[string]string, 4)
-	return &IPvs{addr, port, sch, backends, 300}
+	return &IPvs{addr, port, sch, done, backends, 300}
 }
 
 func runCommand(cmd string) error {
@@ -76,6 +77,8 @@ func (i *IPvs) eventLoop(status <-chan map[string]int) {
 			for addr, _ := range backends {
 				i.AddBackend(addr)
 			}
+		case <-i.done:
+			return
 		}
 	}
 }
@@ -120,6 +123,7 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 		runCommand(cmd)
 		cmd = "ip route flush cache"
 		runCommand(cmd)
+		wgroup.Done()
 	}()
 
 	i.eventLoop(status)
@@ -137,6 +141,7 @@ func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 	defer func() {
 		cmd = "ipvsadm -D -t " + i.Addr + ":" + i.Port
 		runCommand(cmd)
+		wgroup.Done()
 	}()
 
 	localAddr := getIPAddr()
