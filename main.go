@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	ilog "log"
 	"log/syslog"
 	"net"
 	"os"
@@ -36,18 +37,14 @@ type Forwarder struct {
 }
 
 var (
+	log        *ilog.Logger
 	sigChan    = make(chan os.Signal, 1)
 	configFile = flag.String("config", "gbalancer.json", "Configuration file")
 	daemonMode = flag.Bool("daemon", false, "daemon mode")
 	ipvsMode   = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
-	log, _  = syslog.NewLogger(syslog.LOG_NOTICE, 0)
 )
 
 func init() {
-	//if log, err := sylog.NewLogger(sylog.LOG_NOTICE, log.LstdFlags); err != nil {
-	//	log.Printf("Can't open log")
-	//	os.Exit(1)
-	//}
 	signal.Notify(sigChan, os.Interrupt)
 }
 
@@ -58,6 +55,13 @@ func main() {
 
 	if *daemonMode {
 		os.Chdir("/")
+	}
+
+	// try to use syslog first
+	if l, err := syslog.NewLogger(syslog.LOG_NOTICE, 0); err != nil {
+		log = ilog.New(os.Stderr, "", ilog.LstdFlags)
+	} else {
+		log = l
 	}
 
 	decoder := json.NewDecoder(file)
