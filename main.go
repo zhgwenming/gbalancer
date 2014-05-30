@@ -40,12 +40,12 @@ var (
 	configFile = flag.String("config", "gbalancer.json", "Configuration file")
 	daemonMode = flag.Bool("daemon", false, "daemon mode")
 	ipvsMode   = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
-	slog, _    = syslog.NewLogger(syslog.LOG_NOTICE, 0)
+	log, _  = syslog.NewLogger(syslog.LOG_NOTICE, 0)
 )
 
 func init() {
-	//if slog, err := syslog.NewLogger(syslog.LOG_NOTICE, log.LstdFlags); err != nil {
-	//	log.Printf("Can't open logger")
+	//if log, err := sylog.NewLogger(sylog.LOG_NOTICE, log.LstdFlags); err != nil {
+	//	log.Printf("Can't open log")
 	//	os.Exit(1)
 	//}
 	signal.Notify(sigChan, os.Interrupt)
@@ -69,10 +69,10 @@ func main() {
 
 	err := decoder.Decode(&config)
 	if err != nil {
-		slog.Println("error:", err)
+		log.Println("error:", err)
 	}
-	//slog.Printf("%v", config)
-	slog.Printf("Listen on %s:%s, backend: %v", config.Addr, config.Port, config.Backend)
+	//log.Printf("%v", config)
+	log.Printf("Listen on %s:%s, backend: %v", config.Addr, config.Port, config.Backend)
 
 	tcpAddr := config.Addr + ":" + config.Port
 
@@ -91,7 +91,7 @@ func main() {
 		listener, err := net.Listen("tcp", tcpAddr)
 
 		if err != nil {
-			slog.Fatal(err)
+			log.Fatal(err)
 		}
 
 		job := make(chan *Request)
@@ -104,16 +104,16 @@ func main() {
 			for {
 				conn, err := listener.Accept()
 				if err != nil {
-					slog.Printf("%s\n", err)
+					log.Printf("%s\n", err)
 				}
-				//slog.Println("main: got a connection")
+				//log.Println("main: got a connection")
 				req := &Request{conn: conn}
 				job <- req
 			}
 		}()
 	}
 	for sig := range sigChan {
-		slog.Printf("captured %v, exiting..", sig)
+		log.Printf("captured %v, exiting..", sig)
 		return
 	}
 

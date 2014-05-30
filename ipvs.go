@@ -30,7 +30,7 @@ func runCommand(cmd string) error {
 	output, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("Err: %s Output: %s, Cmd %s", err, output, cmd)
-		slog.Printf("%s", err)
+		log.Printf("%s", err)
 	}
 	return err
 }
@@ -41,7 +41,7 @@ func getIPAddr() (addr string) {
 		ipnet, ok := i.(*net.IPNet)
 
 		if !ok {
-			slog.Fatal("assertion err: %v\n", ipnet)
+			log.Fatal("assertion err: %v\n", ipnet)
 		}
 
 		ip4 := ipnet.IP.To4()
@@ -51,7 +51,7 @@ func getIPAddr() (addr string) {
 			break
 		}
 	}
-	slog.Printf("%v", addr)
+	log.Printf("%v", addr)
 	return
 }
 
@@ -74,7 +74,7 @@ func (i *IPvs) schedule(status <-chan map[string]int) {
 		"-s", i.Scheduler,
 		"-p", strconv.Itoa(i.Persist)).CombinedOutput(); err != nil {
 		err = fmt.Errorf("Init Err: %s Output: %s", err, output)
-		slog.Fatal(err)
+		log.Fatal(err)
 	}
 	defer func() {
 		cmd = "ipvsadm -D -t " + IPvsAddr + ":" + i.Port
@@ -102,7 +102,7 @@ func (i *IPvs) schedule(status <-chan map[string]int) {
 		select {
 		case backends := <-status:
 			if len(backends) == 0 {
-				slog.Printf("balancer: got empty backends list")
+				log.Printf("balancer: got empty backends list")
 			}
 
 			for addr, _ := range i.backends {
@@ -122,30 +122,30 @@ func (i *IPvs) schedule(status <-chan map[string]int) {
 }
 
 func (i *IPvs) AddBackend(addr string) {
-	slog.Printf("balancer: bring up %s.\n", addr)
+	log.Printf("balancer: bring up %s.\n", addr)
 	srv := IPvsAddr + ":" + i.Port
 	if output, err := exec.Command("ipvsadm", "-a",
 		"-t", srv,
 		"-r", addr, "-m").CombinedOutput(); err != nil {
 		err = fmt.Errorf("Add Err: %s Output: %s, Addr %s", err, output, addr)
-		slog.Printf("%s", err)
+		log.Printf("%s", err)
 	}
 
 	i.backends[addr] = addr
 }
 
 func (i *IPvs) RemoveBackend(addr string) {
-	slog.Printf("balancer: take down %s.\n", addr)
+	log.Printf("balancer: take down %s.\n", addr)
 	srv := i.Addr + ":" + i.Port
 	if _, ok := i.backends[addr]; ok {
 		if output, err := exec.Command("ipvsadm", "-d",
 			"-t", srv,
 			"-r", addr).CombinedOutput(); err != nil {
 			err = fmt.Errorf("Remove Err: %s Output: %s", err, output)
-			slog.Printf("%s", err)
+			log.Printf("%s", err)
 		}
 		delete(i.backends, addr)
 	} else {
-		slog.Printf("balancer: %s is not up, bug might exist!", addr)
+		log.Printf("balancer: %s is not up, bug might exist!", addr)
 	}
 }
