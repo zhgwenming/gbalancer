@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -96,8 +97,9 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 	if output, err := exec.Command("ipvsadm", "-A",
 		"-t", IPvsAddr+":"+i.Port,
 		"-s", i.Scheduler).CombinedOutput(); err != nil {
-		err = fmt.Errorf("Init Err: %s Output: %s", err, output)
-		log.Fatal(err)
+		log.Printf("ipvs init: %s", err)
+		log.Printf("ipvs: %s", output)
+		os.Exit(1)
 	}
 	defer func() {
 		cmd = "ipvsadm -D -t " + IPvsAddr + ":" + i.Port
