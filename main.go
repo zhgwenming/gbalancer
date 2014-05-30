@@ -7,7 +7,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"log"
+	"log/syslog"
 	"net"
 	"os"
 	"os/signal"
@@ -40,9 +40,14 @@ var (
 	configFile = flag.String("config", "gbalancer.json", "Configuration file")
 	daemonMode = flag.Bool("daemon", false, "daemon mode")
 	ipvsMode   = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
+	slog, _    = syslog.NewLogger(syslog.LOG_NOTICE, 0)
 )
 
 func init() {
+	//if slog, err := syslog.NewLogger(syslog.LOG_NOTICE, log.LstdFlags); err != nil {
+	//	log.Printf("Can't open logger")
+	//	os.Exit(1)
+	//}
 	signal.Notify(sigChan, os.Interrupt)
 }
 
@@ -64,10 +69,10 @@ func main() {
 
 	err := decoder.Decode(&config)
 	if err != nil {
-		log.Println("error:", err)
+		slog.Println("error:", err)
 	}
-	//log.Printf("%v", config)
-	log.Printf("Listen on %s:%s, backend: %v", config.Addr, config.Port, config.Backend)
+	//slog.Printf("%v", config)
+	slog.Printf("Listen on %s:%s, backend: %v", config.Addr, config.Port, config.Backend)
 
 	tcpAddr := config.Addr + ":" + config.Port
 
@@ -86,7 +91,7 @@ func main() {
 		listener, err := net.Listen("tcp", tcpAddr)
 
 		if err != nil {
-			log.Fatal(err)
+			slog.Fatal(err)
 		}
 
 		job := make(chan *Request)
@@ -99,16 +104,16 @@ func main() {
 			for {
 				conn, err := listener.Accept()
 				if err != nil {
-					log.Printf("%s\n", err)
+					slog.Printf("%s\n", err)
 				}
-				//log.Println("main: got a connection")
+				//slog.Println("main: got a connection")
 				req := &Request{conn: conn}
 				job <- req
 			}
 		}()
 	}
 	for sig := range sigChan {
-		log.Printf("captured %v, exiting..", sig)
+		slog.Printf("captured %v, exiting..", sig)
 		return
 	}
 

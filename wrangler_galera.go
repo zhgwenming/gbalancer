@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"log"
 	"strings"
 )
 
@@ -57,18 +56,18 @@ func galeraProbe(user, pass, host string) (map[string]string, error) {
 
 	// user:password@tcp(db.example.com:3306)/dbname
 	dsn := user + ":" + pass + "@tcp(" + host + ")/?timeout=1s"
-	//log.Printf("Probing %s\n", dsn)
+	//slog.Printf("Probing %s\n", dsn)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		//log.Printf("%s\n", err)
+		//slog.Printf("%s\n", err)
 		return wsrep_status, err
 	}
 	defer db.Close()
 
 	rows, err := db.Query("show status like 'wsrep_%'")
 	if err != nil {
-		//log.Printf("%s\n", err)
+		//slog.Printf("%s\n", err)
 		return wsrep_status, err
 	}
 
@@ -79,11 +78,11 @@ func galeraProbe(user, pass, host string) (map[string]string, error) {
 		if _, ok := wsrep_status[key]; ok {
 			wsrep_status[key] = value
 			//if !all {
-			//	log.Printf("%s %s\n", key, value)
+			//	slog.Printf("%s %s\n", key, value)
 			//}
 		}
 		if all {
-			log.Printf("%s %s\n", key, value)
+			slog.Printf("%s %s\n", key, value)
 		}
 	}
 
@@ -113,21 +112,21 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 		_, err := galeraProbe(c.User, c.Pass, addr)
 		results <- backendStatus{addr, err}
 		//if err != nil {
-		//	log.Printf("probe: %s\n", err)
+		//	slog.Printf("probe: %s\n", err)
 		//}
 	}
 
 	for dirIndex, dirAddr := range c.Director {
 		status, err := galeraProbe(c.User, c.Pass, dirAddr)
 		if err != nil {
-			log.Println(err)
+			slog.Println(err)
 			continue
 		}
 
 		backends[dirAddr] = FlagUp
 		if dirIndex != 0 {
 			c.Director[0], c.Director[dirIndex] = c.Director[dirIndex], c.Director[0]
-			log.Printf("Make %s as the first director\n", dirAddr)
+			slog.Printf("Make %s as the first director\n", dirAddr)
 		}
 
 		if val, ok := status[WsrepAddresses]; ok && val != "" {
@@ -146,17 +145,17 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 				r := <-results
 				if r.err == nil {
 					backends[r.backend] = FlagUp
-					//log.Printf("host: %s\n", r.backend)
+					//slog.Printf("host: %s\n", r.backend)
 				} else {
-					log.Printf("error: %s", r.err)
+					slog.Printf("error: %s", r.err)
 				}
 			}
 			break
 		} else {
-			log.Printf("host %s: %s key doesn't exist in status\n", dirAddr, WsrepAddresses)
+			slog.Printf("host %s: %s key doesn't exist in status\n", dirAddr, WsrepAddresses)
 			continue
 		}
 	}
-	//log.Printf("Active server: %v\n", backends)
+	//slog.Printf("Active server: %v\n", backends)
 	return backends, nil
 }

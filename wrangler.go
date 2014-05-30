@@ -5,7 +5,7 @@
 package main
 
 import (
-	"log"
+	//"log"
 	"os"
 	"time"
 )
@@ -33,11 +33,11 @@ func NewWrangler(config Configuration, back chan<- map[string]int) *Wrangler {
 	case "ext":
 		hexec = NewHealthExt(config.ExtCommand)
 		if config.ExtCommand == "" {
-			log.Printf("Need to specify ExtCommand for ext Service")
+			slog.Printf("Need to specify ExtCommand for ext Service")
 			os.Exit(1)
 		}
 	default:
-		log.Printf("Unknown healthy monitor: %s", config.Service)
+		slog.Printf("Unknown healthy monitor: %s", config.Service)
 		os.Exit(1)
 	}
 
@@ -52,24 +52,24 @@ func NewWrangler(config Configuration, back chan<- map[string]int) *Wrangler {
 func (w *Wrangler) ValidBackends() {
 	backends, err := w.healthExec.BuildActiveBackends()
 	if err != nil {
-		log.Printf("wrangler: %s\n", err)
+		slog.Printf("wrangler: %s\n", err)
 		return
 	}
 
-	//log.Printf("backends is %v\n", backends)
+	//slog.Printf("backends is %v\n", backends)
 
 	// remove fail node first
 	for b := range w.Backends {
 		if _, ok := backends[b]; !ok {
 			delete(w.Backends, b)
-			log.Printf("wrangler: detected server %s is down\n", b)
+			slog.Printf("wrangler: detected server %s is down\n", b)
 		}
 	}
 
 	// add new backends
 	for b := range backends {
 		if _, ok := w.Backends[b]; !ok {
-			log.Printf("wrangler: detected server %s is up\n", b)
+			slog.Printf("wrangler: detected server %s is up\n", b)
 			w.Backends[b] = backends[b]
 		}
 	}
@@ -91,7 +91,7 @@ func (w *Wrangler) Monitor() {
 	for {
 		select {
 		case <-ticker.C:
-			//log.Printf("got a tick")
+			//slog.Printf("got a tick")
 			w.ValidBackends()
 		}
 	}

@@ -7,7 +7,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -59,11 +58,11 @@ func (t *HealthHTTP) BuildActiveBackends() (map[string]int, error) {
 		r := <-results
 		if r.err == nil {
 			backends[r.backend] = FlagUp
-			//log.Printf("host: %s\n", r.backend)
+			//slog.Printf("host: %s\n", r.backend)
 		} else {
-			log.Printf("http error: %s", r.err)
+			slog.Printf("http error: %s", r.err)
 		}
 	}
-	//log.Printf("Active server: %v\n", backends)
+	//slog.Printf("Active server: %v\n", backends)
 	return backends, nil
 }
