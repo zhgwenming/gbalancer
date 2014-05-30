@@ -95,20 +95,20 @@ func (i *IPvs) eventLoop(status <-chan map[string]int) {
 func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 	var cmd string
 	if output, err := exec.Command("ipvsadm", "-A",
-		"-t", IPvsAddr+":"+i.Port,
+		"-t", i.Addr+":"+i.Port,
 		"-s", i.Scheduler).CombinedOutput(); err != nil {
 		log.Printf("ipvs init: %s", err)
 		log.Printf("ipvs: %s", output)
 		os.Exit(1)
 	}
 	defer func() {
-		cmd = "ipvsadm -D -t " + IPvsAddr + ":" + i.Port
+		cmd = "ipvsadm -D -t " + i.Addr + ":" + i.Port
 		runCommand(cmd)
 	}()
 
 	localAddr := getIPAddr()
 
-	cmd = "ip route add table local " + IPvsAddr + " dev lo proto kernel scope host src " + localAddr
+	cmd = "ip route add table local " + i.Addr + " dev lo proto kernel scope host src " + localAddr
 	runCommand(cmd)
 
 	// flush the routing cache
@@ -116,7 +116,7 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 	runCommand(cmd)
 
 	defer func() {
-		cmd = "ip route  delete  table local " + IPvsAddr
+		cmd = "ip route  delete  table local " + i.Addr
 		runCommand(cmd)
 		cmd = "ip route flush cache"
 		runCommand(cmd)
@@ -128,27 +128,27 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 	var cmd string
 	if output, err := exec.Command("ipvsadm", "-A",
-		"-t", IPvsAddr+":"+i.Port,
+		"-t", i.Addr+":"+i.Port,
 		"-s", i.Scheduler,
 		"-p", strconv.Itoa(i.Persist)).CombinedOutput(); err != nil {
 		err = fmt.Errorf("Init Err: %s Output: %s", err, output)
 		log.Fatal(err)
 	}
 	defer func() {
-		cmd = "ipvsadm -D -t " + IPvsAddr + ":" + i.Port
+		cmd = "ipvsadm -D -t " + i.Addr + ":" + i.Port
 		runCommand(cmd)
 	}()
 
 	localAddr := getIPAddr()
 	// % iptables -t nat -A POSTROUTING -m ipvs --vaddr 192.168.100.30/32 --vport 80 -j SNAT --to-source 192.168.10.10
-	cmd = "iptables -t nat -A POSTROUTING -m ipvs --vaddr " + IPvsAddr + " --vport " + i.Port + " -j SNAT --to " + localAddr
+	cmd = "iptables -t nat -A POSTROUTING -m ipvs --vaddr " + i.Addr + " --vport " + i.Port + " -j SNAT --to " + localAddr
 	runCommand(cmd)
 
 	i.eventLoop(status)
 }
 func (i *IPvs) AddBackend(addr string) {
 	log.Printf("balancer: bring up %s.\n", addr)
-	srv := IPvsAddr + ":" + i.Port
+	srv := i.Addr + ":" + i.Port
 	if output, err := exec.Command("ipvsadm", "-a",
 		"-t", srv,
 		"-r", addr, "-m").CombinedOutput(); err != nil {

@@ -16,7 +16,7 @@ const (
 	ListenAddr     = "127.0.0.1"
 	ListenPort     = "3306"
 	CheckInterval  = 60
-	IPvsAddr       = "127.1.1.1"
+	IPvsLocalAddr  = "127.1.1.1"
 )
 
 const (
