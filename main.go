@@ -90,7 +90,7 @@ func main() {
 
 	if *ipvsMode {
 		ipvs := NewIPvs(config.Addr, config.Port, "wlc")
-		go ipvs.schedule(status)
+		go ipvs.LocalSchedule(status)
 	} else {
 		listener, err := net.Listen("tcp", tcpAddr)
 
