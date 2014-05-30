@@ -89,7 +89,7 @@ func main() {
 	go wgl.Monitor()
 
 	if *ipvsMode {
-		ipvs := NewIPvs(config.Addr, config.Port, "wlc")
+		ipvs := NewIPvs(config.Addr, config.Port, "sh")
 		go ipvs.LocalSchedule(status)
 	} else {
 		listener, err := net.Listen("tcp", tcpAddr)

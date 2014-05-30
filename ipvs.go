@@ -95,8 +95,7 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 	var cmd string
 	if output, err := exec.Command("ipvsadm", "-A",
 		"-t", IPvsAddr+":"+i.Port,
-		"-s", i.Scheduler,
-		"-p", strconv.Itoa(i.Persist)).CombinedOutput(); err != nil {
+		"-s", i.Scheduler).CombinedOutput(); err != nil {
 		err = fmt.Errorf("Init Err: %s Output: %s", err, output)
 		log.Fatal(err)
 	}
@@ -106,21 +105,20 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 	}()
 
 	localAddr := getIPAddr()
-	// % iptables -t nat -A POSTROUTING -m ipvs --vaddr 192.168.100.30/32 --vport 80 -j SNAT --to-source 192.168.10.10
-	cmd = "iptables -t nat -A POSTROUTING -m ipvs --vaddr " + IPvsAddr + " --vport " + i.Port + " -j SNAT --to " + localAddr
-	runCommand(cmd)
 
 	cmd = "ip route add table local " + IPvsAddr + " dev lo proto kernel scope host src " + localAddr
 	runCommand(cmd)
+
+	// flush the routing cache
+	cmd = "ip route flush cache"
+	runCommand(cmd)
+
 	defer func() {
 		cmd = "ip route  delete  table local " + IPvsAddr
 		runCommand(cmd)
 		cmd = "ip route flush cache"
 		runCommand(cmd)
 	}()
-
-	cmd = "ip route flush cache"
-	runCommand(cmd)
 
 	i.eventLoop(status)
 }
@@ -142,18 +140,6 @@ func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 	localAddr := getIPAddr()
 	// % iptables -t nat -A POSTROUTING -m ipvs --vaddr 192.168.100.30/32 --vport 80 -j SNAT --to-source 192.168.10.10
 	cmd = "iptables -t nat -A POSTROUTING -m ipvs --vaddr " + IPvsAddr + " --vport " + i.Port + " -j SNAT --to " + localAddr
-	runCommand(cmd)
-
-	cmd = "ip route add table local " + IPvsAddr + " dev lo proto kernel scope host src " + localAddr
-	runCommand(cmd)
-	defer func() {
-		cmd = "ip route  delete  table local " + IPvsAddr
-		runCommand(cmd)
-		cmd = "ip route flush cache"
-		runCommand(cmd)
-	}()
-
-	cmd = "ip route flush cache"
 	runCommand(cmd)
 
 	i.eventLoop(status)
