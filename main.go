@@ -91,7 +91,7 @@ func main() {
 
 	go wgl.Monitor()
 
-	done := make(chan int)
+	done := make(chan int, 1)
 	if *ipvsMode {
 		wgroup.Add(1)
 		if *ipvsRemote {
