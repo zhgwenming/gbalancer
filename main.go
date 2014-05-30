@@ -42,6 +42,7 @@ var (
 	configFile = flag.String("config", "gbalancer.json", "Configuration file")
 	daemonMode = flag.Bool("daemon", false, "daemon mode")
 	ipvsMode   = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
+	ipvsRemote = flag.Bool("remote", false, "independent director")
 )
 
 func init() {
@@ -89,8 +90,13 @@ func main() {
 	go wgl.Monitor()
 
 	if *ipvsMode {
-		ipvs := NewIPvs(config.Addr, config.Port, "sh")
-		go ipvs.LocalSchedule(status)
+		if *ipvsRemote {
+			ipvs := NewIPvs(config.Addr, config.Port, "wlc")
+			go ipvs.RemoteSchedule(status)
+		} else {
+			ipvs := NewIPvs(config.Addr, config.Port, "sh")
+			go ipvs.LocalSchedule(status)
+		}
 	} else {
 		listener, err := net.Listen("tcp", tcpAddr)
 
