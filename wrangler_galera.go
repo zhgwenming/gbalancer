@@ -147,12 +147,12 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 					backends[r.backend] = FlagUp
 					//log.Printf("host: %s\n", r.backend)
 				} else {
-					log.Printf("error: %s", r.err)
+					log.Printf("node not ready: %s", r.err)
 				}
 			}
 			break
 		} else {
-			log.Printf("host %s: %s key doesn't exist in status\n", dirAddr, WsrepAddresses)
+			log.Printf("host %s: %s key doesn't exist in status, not a galera cluster?\n", dirAddr, WsrepAddresses)
 			continue
 		}
 	}
