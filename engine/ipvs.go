@@ -5,8 +5,8 @@
 package engine
 
 import (
-	logger "../log"
 	"fmt"
+	logger "github.com/zhgwenming/gbalancer/log"
 	"net"
 	"os"
 	"os/exec"

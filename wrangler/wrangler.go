@@ -5,14 +5,14 @@
 package wrangler
 
 import (
-	logger "../log"
+	"github.com/zhgwenming/gbalancer/config"
+	logger "github.com/zhgwenming/gbalancer/log"
 	"os"
 	"time"
-	"../config"
 )
 
 var (
-	log        = logger.NewLogger()
+	log = logger.NewLogger()
 )
 
 type healthDriver interface {

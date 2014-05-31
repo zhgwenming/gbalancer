@@ -5,12 +5,12 @@
 package main
 
 import (
-	"./config"
-	"./engine"
-	logger "./log"
-	"./wrangler"
 	"encoding/json"
 	"flag"
+	"github.com/zhgwenming/gbalancer/config"
+	"github.com/zhgwenming/gbalancer/engine"
+	logger "github.com/zhgwenming/gbalancer/log"
+	"github.com/zhgwenming/gbalancer/wrangler"
 	"net"
 	"os"
 	"os/signal"
