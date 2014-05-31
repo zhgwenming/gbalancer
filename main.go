@@ -30,7 +30,7 @@ type Forwarder struct {
 }
 
 var (
-	wgroup     sync.WaitGroup
+	wgroup     = &sync.WaitGroup{}
 	log        = logger.NewLogger()
 	sigChan    = make(chan os.Signal, 1)
 	configFile = flag.String("config", "gbalancer.json", "Configuration file")
@@ -80,11 +80,11 @@ func main() {
 	if *ipvsMode {
 		wgroup.Add(1)
 		if *ipvsRemote {
-			ipvs := NewIPvs(config.Addr, config.Port, "wlc", done)
+			ipvs := NewIPvs(config.Addr, config.Port, "wlc", done, wgroup)
 			go ipvs.RemoteSchedule(status)
 		} else {
 			//ipvs := NewIPvs(IPvsLocalAddr, config.Port, "sh", done)
-			ipvs := NewIPvs(IPvsLocalAddr, config.Port, "wlc", done)
+			ipvs := NewIPvs(IPvsLocalAddr, config.Port, "wlc", done, wgroup)
 			go ipvs.LocalSchedule(status)
 		}
 	} else {

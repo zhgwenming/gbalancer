@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type IPvs struct {
@@ -18,13 +19,14 @@ type IPvs struct {
 	Port      string
 	Scheduler string
 	done      <-chan int
+	WGroup    *sync.WaitGroup
 	backends  map[string]string
 	Persist   int
 }
 
-func NewIPvs(addr, port, sch string, done <-chan int) *IPvs {
+func NewIPvs(addr, port, sch string, done <-chan int, wgroup *sync.WaitGroup) *IPvs {
 	backends := make(map[string]string, 4)
-	return &IPvs{addr, port, sch, done, backends, 300}
+	return &IPvs{addr, port, sch, done, wgroup, backends, 300}
 }
 
 func runCommand(cmd string) error {
@@ -132,7 +134,7 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 		runCommand(cmd)
 		cmd = "ip route flush cache"
 		runCommand(cmd)
-		wgroup.Done()
+		i.WGroup.Done()
 	}()
 
 	i.eventLoop(status)
@@ -159,7 +161,7 @@ func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 	defer func() {
 		cmd = "ipvsadm -D -t " + i.Addr + ":" + i.Port
 		runCommand(cmd)
-		wgroup.Done()
+		i.WGroup.Done()
 	}()
 
 	localAddr := getIPAddr()

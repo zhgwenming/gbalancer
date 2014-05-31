@@ -11,9 +11,9 @@ const (
 )
 
 const (
-	ListenAddr     = "127.0.0.1"
-	ListenPort     = "3306"
-	IPvsLocalAddr  = "127.1.1.1"
+	ListenAddr    = "127.0.0.1"
+	ListenPort    = "3306"
+	IPvsLocalAddr = "127.1.1.1"
 )
 
 const (
