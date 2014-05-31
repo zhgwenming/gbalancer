@@ -21,14 +21,18 @@ const VirtNetTemplate = `
 </network>
 `
 
-type Network struct {
+type VirNetInfo struct {
 	Name  string
 	Iface *net.Interface
+}
+type VirNet struct {
+	VirNetInfo
+	Xml *bytes.Buffer
 }
 
 var (
 	//networks = make([]*Network, 0, 2)
-	networks = make(map[string]Network)
+	networks = make(map[string]VirNet)
 )
 
 func main() {
@@ -37,13 +41,29 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Compile template first
+	tmpl := template.Must(template.New("net").Parse(VirtNetTemplate))
+
 	for _, iface := range ifaces {
 		if iface.Flags&(net.FlagLoopback|net.FlagPointToPoint) == 0 {
 			ifi := iface
-			n := "vnet-" + ifi.Name
-			net := Network{n, &ifi}
-			networks[n] = net
 			log.Printf("%s", ifi.Name)
+
+			// network name
+			name := "vnet-" + ifi.Name
+
+			// xml buffer
+			buf := make([]byte, 0, 64)
+			xml := bytes.NewBuffer(buf)
+
+			// netinfo
+			netinfo := VirNetInfo{name, &ifi}
+			tmpl.Execute(xml, netinfo)
+			log.Printf("%s", xml)
+
+			virnet := VirNet{netinfo, xml}
+
+			networks[name] = virnet
 		}
 	}
 
@@ -61,12 +81,4 @@ func main() {
 		log.Printf("%v", desc)
 	}
 
-	buf := make([]byte, 0, 64)
-	xml := bytes.NewBuffer(buf)
-	tmpl := template.Must(template.New("net").Parse(VirtNetTemplate))
-	for _, net := range networks {
-		tmpl.Execute(xml, net)
-	}
-
-	log.Printf("%s", xml)
 }
