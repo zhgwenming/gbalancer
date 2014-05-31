@@ -5,10 +5,9 @@
 package main
 
 import (
+	logger "./log"
 	"encoding/json"
 	"flag"
-	ilog "log"
-	"log/syslog"
 	"net"
 	"os"
 	"os/signal"
@@ -40,7 +39,7 @@ type Forwarder struct {
 
 var (
 	wgroup     sync.WaitGroup
-	log        *ilog.Logger
+	log        = logger.NewLogger()
 	sigChan    = make(chan os.Signal, 1)
 	configFile = flag.String("config", "gbalancer.json", "Configuration file")
 	daemonMode = flag.Bool("daemon", false, "daemon mode")
@@ -59,13 +58,6 @@ func main() {
 
 	if *daemonMode {
 		os.Chdir("/")
-	}
-
-	// try to use syslog first
-	if l, err := syslog.NewLogger(syslog.LOG_NOTICE, 0); err != nil {
-		log = ilog.New(os.Stderr, "", ilog.LstdFlags)
-	} else {
-		log = l
 	}
 
 	decoder := json.NewDecoder(file)
