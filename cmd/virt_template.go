@@ -5,11 +5,11 @@
 package main
 
 import (
+	"bytes"
+	libvirt "github.com/alexzorin/libvirt-go"
 	"log"
 	"net"
-	"os"
 	"text/template"
-	libvirt "github.com/alexzorin/libvirt-go"
 )
 
 const VirtNetTemplate = `
@@ -27,7 +27,8 @@ type Network struct {
 }
 
 var (
-	networks = make([]*Network, 0, 2)
+	//networks = make([]*Network, 0, 2)
+	networks = make(map[string]Network)
 )
 
 func main() {
@@ -39,9 +40,10 @@ func main() {
 	for _, iface := range ifaces {
 		if iface.Flags&(net.FlagLoopback|net.FlagPointToPoint) == 0 {
 			ifi := iface
-			network := &Network{"vnet-" + ifi.Name, &ifi}
-			networks = append(networks, network)
-			log.Printf("%s", iface.Name)
+			n := "vnet-" + ifi.Name
+			net := Network{n, &ifi}
+			networks[n] = net
+			log.Printf("%s", ifi.Name)
 		}
 	}
 
@@ -51,14 +53,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	virNets, err := virConn.ListAllNetworks(0)
+	// VIR_CONNECT_LIST_NETWORKS_TRANSIENT
+	// INACTIVE/ACTIVE
+	virNets, err := virConn.ListAllNetworks(libvirt.VIR_CONNECT_LIST_NETWORKS_INACTIVE)
 	for _, v := range virNets {
 		desc, _ := v.GetXMLDesc(0)
 		log.Printf("%v", desc)
 	}
 
-	xml := template.Must(template.New("net").Parse(VirtNetTemplate))
+	buf := make([]byte, 0, 64)
+	xml := bytes.NewBuffer(buf)
+	tmpl := template.Must(template.New("net").Parse(VirtNetTemplate))
 	for _, net := range networks {
-		xml.Execute(os.Stdout, net)
+		tmpl.Execute(xml, net)
 	}
+
+	log.Printf("%s", xml)
 }
