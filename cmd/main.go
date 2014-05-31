@@ -6,6 +6,7 @@ package main
 
 import (
 	"github.com/zhgwenming/gbalancer/utils"
+	"log"
 )
 
 type Sandbox struct {
@@ -22,8 +23,13 @@ func NewSandbox(name, network, cmd string) *Sandbox {
 }
 
 func (s *Sandbox) Run() error {
-	cmdline := "virt-sandbox --network address=" + s.Addr + "/24,source=" + s.Network + "  -n " + s.Name + " " + s.Command
-	return utils.RunCommand(cmdline)
+	//cmdline := "virt-sandbox --network address=" + s.Addr + "/24,source=" + s.Network + "  -n " + s.Name + " " + s.Command
+	cmdline := "virt-sandbox-service create --network address=" + s.Addr + "/24,source=" + s.Network + " " + s.Name + " -- " + s.Command
+	cmds := []string{
+		cmdline,
+		"virsh start " + s.Name,
+	}
+	return utils.EnsureCommands(cmds)
 }
 
 // virt-sandbox /bin/bash --network address=172.16.154.199/24,source=lan  -n test-virt-sandbox
@@ -31,5 +37,8 @@ func main() {
 	CreateRequiredNetwork()
 	sandbox := NewSandbox("test-sandbox", "vnet-eno16777736", "/bin/bash")
 	sandbox.Addr = "172.16.154.199"
-	sandbox.Run()
+	err := sandbox.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
