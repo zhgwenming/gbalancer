@@ -99,7 +99,8 @@ func main() {
 			ipvs := NewIPvs(config.Addr, config.Port, "wlc", done)
 			go ipvs.RemoteSchedule(status)
 		} else {
-			ipvs := NewIPvs(IPvsLocalAddr, config.Port, "sh", done)
+			//ipvs := NewIPvs(IPvsLocalAddr, config.Port, "sh", done)
+			ipvs := NewIPvs(IPvsLocalAddr, config.Port, "wlc", done)
 			go ipvs.LocalSchedule(status)
 		}
 	} else {
