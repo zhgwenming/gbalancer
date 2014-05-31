@@ -2,9 +2,10 @@
 // Use of this source code is governed by a GPLv3
 // Author: Wenming Zhang <zhgwenming@gmail.com>
 
-package main
+package engine
 
 import (
+	logger "../log"
 	"fmt"
 	"net"
 	"os"
@@ -23,6 +24,10 @@ type IPvs struct {
 	backends  map[string]string
 	Persist   int
 }
+
+var (
+	log = logger.NewLogger()
+)
 
 func NewIPvs(addr, port, sch string, done <-chan int, wgroup *sync.WaitGroup) *IPvs {
 	backends := make(map[string]string, 4)

@@ -6,8 +6,9 @@ package main
 
 import (
 	"./config"
+	"./engine"
 	logger "./log"
-	wrangler "./wrangler"
+	"./wrangler"
 	"encoding/json"
 	"flag"
 	"net"
@@ -80,11 +81,11 @@ func main() {
 	if *ipvsMode {
 		wgroup.Add(1)
 		if *ipvsRemote {
-			ipvs := NewIPvs(config.Addr, config.Port, "wlc", done, wgroup)
+			ipvs := engine.NewIPvs(config.Addr, config.Port, "wlc", done, wgroup)
 			go ipvs.RemoteSchedule(status)
 		} else {
 			//ipvs := NewIPvs(IPvsLocalAddr, config.Port, "sh", done)
-			ipvs := NewIPvs(IPvsLocalAddr, config.Port, "wlc", done, wgroup)
+			ipvs := engine.NewIPvs(IPvsLocalAddr, config.Port, "wlc", done, wgroup)
 			go ipvs.LocalSchedule(status)
 		}
 	} else {
