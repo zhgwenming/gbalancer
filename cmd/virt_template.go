@@ -18,4 +18,5 @@ const VirtNetTemplate = `
 `
 
 func init() {
+	netxml, err := template.New("net").Parse(VirtNetTemplate)
 }
