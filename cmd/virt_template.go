@@ -31,11 +31,10 @@ type VirNet struct {
 }
 
 var (
-	//networks = make([]*Network, 0, 2)
 	RequiredNetwork = make(map[string]VirNet)
 )
 
-func main() {
+func CreateRequiredNetwork() {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		log.Fatal(err)
@@ -44,6 +43,7 @@ func main() {
 	// Compile template first
 	tmpl := template.Must(template.New("net").Parse(VirtNetTemplate))
 
+	// build required network list
 	for _, iface := range ifaces {
 		if iface.Flags&(net.FlagLoopback|net.FlagPointToPoint) == 0 {
 			ifi := iface
@@ -89,6 +89,7 @@ func main() {
 		}
 	}
 
+	// check active network
 	activeNet, err := virConn.ListAllNetworks(libvirt.VIR_CONNECT_LIST_NETWORKS_ACTIVE)
 	for _, v := range activeNet {
 		name, err := v.GetName()
