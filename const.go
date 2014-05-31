@@ -11,11 +11,8 @@ const (
 )
 
 const (
-	WsrepAddresses = "wsrep_incoming_addresses"
-	WsrepConnected = "wsrep_connected"
 	ListenAddr     = "127.0.0.1"
 	ListenPort     = "3306"
-	CheckInterval  = 60
 	IPvsLocalAddr  = "127.1.1.1"
 )
 
