@@ -32,7 +32,7 @@ type VirNet struct {
 
 var (
 	//networks = make([]*Network, 0, 2)
-	VirNetwork = make(map[string]VirNet)
+	RequiredNetwork = make(map[string]VirNet)
 )
 
 func main() {
@@ -59,10 +59,10 @@ func main() {
 			// netinfo
 			netinfo := VirNetInfo{name, &ifi}
 			tmpl.Execute(xml, netinfo)
-			log.Printf("%s", xml)
+			//log.Printf("%s", xml)
 
 			virnet := VirNet{netinfo, xml}
-			VirNetwork[name] = virnet
+			RequiredNetwork[name] = virnet
 		}
 	}
 
@@ -73,8 +73,8 @@ func main() {
 
 	// VIR_CONNECT_LIST_NETWORKS_TRANSIENT
 	// INACTIVE/ACTIVE
-	libvirtNet, err := virConn.ListAllNetworks(libvirt.VIR_CONNECT_LIST_NETWORKS_INACTIVE)
-	for _, v := range libvirtNet {
+	inactiveNet, err := virConn.ListAllNetworks(libvirt.VIR_CONNECT_LIST_NETWORKS_INACTIVE)
+	for _, v := range inactiveNet {
 		name, err := v.GetName()
 		if err != nil {
 			log.Printf("Error to get libvirt network name: %s", err)
@@ -82,9 +82,38 @@ func main() {
 		//desc, _ := v.GetXMLDesc(0)
 		//log.Printf("%v", desc)
 
-		if _, ok := VirNetwork[name]; ok {
-			log.Printf("Found exist network %s", name)
-			delete(VirNetwork, name)
+		if _, ok := RequiredNetwork[name]; ok {
+			log.Printf("Undefine inactive network %s", name)
+			// undefine an inactive required network
+			v.Undefine()
+		}
+	}
+
+	activeNet, err := virConn.ListAllNetworks(libvirt.VIR_CONNECT_LIST_NETWORKS_ACTIVE)
+	for _, v := range activeNet {
+		name, err := v.GetName()
+		if err != nil {
+			log.Printf("Error to get libvirt network name: %s", err)
+		}
+
+		if _, ok := RequiredNetwork[name]; ok {
+			log.Printf("Found active network %s", name)
+			// required network is active, delete it from our active hash
+			delete(RequiredNetwork, name)
+		}
+	}
+
+	// create all required network
+	for _, v := range RequiredNetwork {
+		xml := v.Xml.String()
+		if definedNet, err := virConn.NetworkDefineXML(xml); err != nil {
+			log.Printf("Define virt network error: %s", err)
+		} else {
+			if err = definedNet.Create(); err != nil {
+				log.Printf("Create virt network error: %s", err)
+			} else {
+				log.Printf("Start network %s", v.Name)
+			}
 		}
 	}
 
