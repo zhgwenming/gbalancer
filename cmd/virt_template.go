@@ -9,7 +9,7 @@ import (
 	"net"
 	"os"
 	"text/template"
-	//libvirt "github.com/alexzorin/libvirt-go"
+	libvirt "github.com/alexzorin/libvirt-go"
 )
 
 const VirtNetTemplate = `
@@ -45,7 +45,17 @@ func main() {
 		}
 	}
 
-	//virConn := libvirt.NewVirtConnection("lxc:///")
+	virConn, err := libvirt.NewVirConnection("lxc:///")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	virNets, err := virConn.ListAllNetworks(0)
+	for _, v := range virNets {
+		desc, _ := v.GetXMLDesc(0)
+		log.Printf("%v", desc)
+	}
 
 	xml := template.Must(template.New("net").Parse(VirtNetTemplate))
 	for _, net := range networks {
