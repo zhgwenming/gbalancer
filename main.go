@@ -5,7 +5,9 @@
 package main
 
 import (
+	"./config"
 	logger "./log"
+	wrangler "./wrangler"
 	"encoding/json"
 	"flag"
 	"net"
@@ -14,16 +16,6 @@ import (
 	"sync"
 	"syscall"
 )
-
-type Configuration struct {
-	Service    string
-	ExtCommand string
-	User       string
-	Pass       string
-	Addr       string
-	Port       string
-	Backend    []string
-}
 
 type Request struct {
 	conn    net.Conn
@@ -61,7 +53,7 @@ func main() {
 	}
 
 	decoder := json.NewDecoder(file)
-	config := Configuration{
+	config := config.Configuration{
 		Service: "galera",
 		Addr:    "127.0.0.1",
 		Port:    "3306",
@@ -80,7 +72,7 @@ func main() {
 	//status := make(chan *BEStatus)
 
 	// start the wrangler
-	wgl := NewWrangler(config, status)
+	wgl := wrangler.NewWrangler(config, status)
 
 	go wgl.Monitor()
 

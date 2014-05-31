@@ -2,12 +2,17 @@
 // Use of this source code is governed by a GPLv3
 // Author: Wenming Zhang <zhgwenming@gmail.com>
 
-package main
+package wrangler
 
 import (
-	//"log"
+	logger "../log"
 	"os"
 	"time"
+	"../config"
+)
+
+var (
+	log        = logger.NewLogger()
 )
 
 type healthDriver interface {
@@ -21,7 +26,7 @@ type Wrangler struct {
 	BackChan   chan<- map[string]int
 }
 
-func NewWrangler(config Configuration, back chan<- map[string]int) *Wrangler {
+func NewWrangler(config config.Configuration, back chan<- map[string]int) *Wrangler {
 	var hexec healthDriver
 	switch config.Service {
 	case "galera":
