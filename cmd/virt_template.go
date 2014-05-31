@@ -32,7 +32,7 @@ type VirNet struct {
 
 var (
 	//networks = make([]*Network, 0, 2)
-	networks = make(map[string]VirNet)
+	VirNetwork = make(map[string]VirNet)
 )
 
 func main() {
@@ -62,23 +62,30 @@ func main() {
 			log.Printf("%s", xml)
 
 			virnet := VirNet{netinfo, xml}
-
-			networks[name] = virnet
+			VirNetwork[name] = virnet
 		}
 	}
 
 	virConn, err := libvirt.NewVirConnection("lxc:///")
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// VIR_CONNECT_LIST_NETWORKS_TRANSIENT
 	// INACTIVE/ACTIVE
-	virNets, err := virConn.ListAllNetworks(libvirt.VIR_CONNECT_LIST_NETWORKS_INACTIVE)
-	for _, v := range virNets {
-		desc, _ := v.GetXMLDesc(0)
-		log.Printf("%v", desc)
+	libvirtNet, err := virConn.ListAllNetworks(libvirt.VIR_CONNECT_LIST_NETWORKS_INACTIVE)
+	for _, v := range libvirtNet {
+		name, err := v.GetName()
+		if err != nil {
+			log.Printf("Error to get libvirt network name: %s", err)
+		}
+		//desc, _ := v.GetXMLDesc(0)
+		//log.Printf("%v", desc)
+
+		if _, ok := VirNetwork[name]; ok {
+			log.Printf("Found exist network %s", name)
+			delete(VirNetwork, name)
+		}
 	}
 
 }
