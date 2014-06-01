@@ -25,7 +25,7 @@ func BecomeLeader(cl *etcd.Client, ttl uint64, sleeptime time.Duration) {
 		// not supported by etcd client yet
 		// so we create a new key and ignore the return value first.
 		if _, err := cl.Create(cluster, value, ttl); err != nil {
-			time.Sleep(sleeptime * time.Second)
+			time.Sleep(5 * time.Second)
 		} else {
 			log.Printf("No leader exist, taking the leadership")
 			go func() {
