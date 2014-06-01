@@ -16,7 +16,7 @@ var (
 )
 
 func RunCommand(cmd string) error {
-	args := strings.Split(cmd, " ")
+	args := strings.Fields(cmd)
 	output, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("Err: %s Output: %s, Cmd %s", err, output, cmd)
