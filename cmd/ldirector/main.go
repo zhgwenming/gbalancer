@@ -17,6 +17,18 @@ const (
 	ttl = 60
 )
 
+// etcd directory hierarchy:
+// v2/keys
+//     ├── serviceName
+//     │        ├── leader
+//     │        ├── resource
+//     │        ├── node
+//     │        │    ├── node1
+//     │        │    ├── node2
+//     │        │    └── nodeN
+//     │        └── config
+//     ├── serviceNameN
+
 func BecomeLeader(cl *etcd.Client, identity string, ttl uint64) {
 	sleeptime := time.Duration(ttl / 3)
 	//log.Printf("Sleep time is %d", sleeptime)
