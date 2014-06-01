@@ -46,7 +46,7 @@ func GetFirstIPAddr() (addr string) {
 
 		ip4 := ipnet.IP.To4()
 
-		if !ip4.IsLoopback() {
+		if !ip4.IsLoopback() && ip4 != nil {
 			addr = ip4.String()
 			break
 		}
@@ -66,7 +66,7 @@ func GetIPAddrs() (addresses []string) {
 
 		ip4 := ipnet.IP.To4()
 
-		if !ip4.IsLoopback() {
+		if !ip4.IsLoopback() && ip4 != nil {
 			addr := ip4.String()
 			addresses = append(addresses, addr)
 			break
