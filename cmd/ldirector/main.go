@@ -47,11 +47,15 @@ func main() {
 
 	//log.Printf("Sleep time is %d", sleeptime)
 
-	server := []string{
-		"http://127.0.0.1:4001",
-	}
+	//server := []string{
+	//	"http://127.0.0.1:4001",
+	//}
+	//cl := etcd.NewClient(server)
 
-	cl := etcd.NewClient(server)
+	cl, err := etcd.NewClientFromFile("config.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	BecomeLeader(cl, ttl, sleeptime)
 
