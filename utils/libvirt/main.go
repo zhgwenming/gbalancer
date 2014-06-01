@@ -9,9 +9,9 @@ import (
 	"log"
 )
 
-func RunSandbox() {
+func RunSandbox(cmd string) {
 	CreateRequiredNetwork()
-	sandbox := utils.NewSandbox("test-sandbox", "vnet-eno16777736", "/bin/bash")
+	sandbox := utils.NewSandbox("test-sandbox", "vnet-eno16777736", cmd)
 	sandbox.Addr = "172.16.154.199"
 	err := sandbox.Run()
 	if err != nil {

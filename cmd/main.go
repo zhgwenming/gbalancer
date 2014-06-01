@@ -9,5 +9,7 @@ import (
 )
 
 func main() {
-	libvirt.RunSandbox()
+	// a bug exist in virt-sandbox, if we specify a non-exist command
+	// such as '111', virt-sandbox will block forever
+	libvirt.RunSandbox("/bin/bash")
 }
