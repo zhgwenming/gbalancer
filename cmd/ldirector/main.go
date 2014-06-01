@@ -17,7 +17,7 @@ const (
 )
 
 func BecomeLeader(cl *etcd.Client, ttl uint64, sleeptime time.Duration) {
-	cluster := "ldirector"
+	cluster := "leader/ldirector"
 	value := strconv.Itoa(os.Getpid())
 
 	for {
