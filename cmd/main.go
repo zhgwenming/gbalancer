@@ -5,16 +5,9 @@
 package main
 
 import (
-	"github.com/zhgwenming/gbalancer/utils"
-	"log"
+	"github.com/zhgwenming/gbalancer/utils/libvirt"
 )
 
 func main() {
-	CreateRequiredNetwork()
-	sandbox := utils.NewSandbox("test-sandbox", "vnet-eno16777736", "/bin/bash")
-	sandbox.Addr = "172.16.154.199"
-	err := sandbox.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
+	libvirt.RunSandbox()
 }
