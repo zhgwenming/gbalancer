@@ -67,6 +67,10 @@ func (l Ldirector) NodePath() string {
 	return path.Join(l.Prefix(), "node", l.IPAddress)
 }
 
+// Node Register, dead instance on same node should be replaced ASAP
+// to avoid service redistribution
+// Issue exist if multiple instances share the same netns but not processns
+// so this process shouldn't run inside containers
 func (l *Ldirector) Register(ttl uint64) error {
 	client := l.etcdClient
 	pid := l.Pid
@@ -108,6 +112,7 @@ func (l *Ldirector) Register(ttl uint64) error {
 
 }
 
+// leader election can take some time to wait ttl expires
 func (l *Ldirector) BecomeLeader(ttl uint64) {
 	client := l.etcdClient
 	id := l.IPAddress
