@@ -5,8 +5,8 @@
 package main
 
 import (
-	"errors"
 	"flag"
+	"fmt"
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/zhgwenming/gbalancer/utils"
 	"log"
@@ -67,49 +67,70 @@ func (l Ldirector) NodePath() string {
 	return path.Join(l.Prefix(), "node", l.IPAddress)
 }
 
-// Node Register, dead instance on same node should be replaced ASAP
-// to avoid service redistribution
-// Issue exist if multiple instances share the same netns but not processns
-// so this process shouldn't run inside containers
-func (l *Ldirector) Register(ttl uint64) error {
+func (l *Ldirector) FindInstance() (int, error) {
+	var pid int
 	client := l.etcdClient
-	pid := l.Pid
-
 	nodePath := l.NodePath()
 
 	resp, err := client.Get(nodePath, false, false)
 	if err != nil {
-		log.Printf("%s", err)
-		_, err = client.Create(nodePath, pid, ttl)
-
-		return err
+		//log.Printf("No node defined in etcd")
+		return pid, err
 	} else {
 		// found a exist node
 		value := resp.Node.Value
-		existPid, err := strconv.Atoi(value)
+		pid, err = strconv.Atoi(value)
 		if err != nil {
-			return err
-		}
-		log.Printf("Found a instance on this node: %d", existPid)
-
-		// find the process
-		// err always is nil on unix systems, so ignore it
-		process, _ := os.FindProcess(existPid)
-
-		err = process.Signal(syscall.Signal(0))
-		//fmt.Printf("process.Signal on pid %d returned: %v\n", existPid, err)
-
-		if err == nil {
-			err = errors.New("A instance exist on this node")
-			return err
+			log.Printf("Got a wrong format of pid %v", value)
+			return pid, err
 		} else {
-			// process doesn't exist on this machine, update the node to this instance
-			log.Printf("Instance dead, replacing node %s to pid %s", nodePath, pid)
-			_, err = client.Update(nodePath, pid, ttl)
-			return err
+			// err of os.FindProcess() is always nil in unix system
+			process, _ := os.FindProcess(pid)
+			err = process.Signal(syscall.Signal(0))
+			return pid, err
 		}
 	}
+}
 
+// Node Register, dead instance on same node should be replaced ASAP
+// to avoid service redistribution
+func (l *Ldirector) Register(ttl uint64) error {
+	client := l.etcdClient
+	pid := l.Pid
+	nodePath := l.NodePath()
+
+	for {
+		existPid, err := l.FindInstance()
+		//log.Printf("error is %s", err)
+		// found a running pid
+		if err == nil {
+			err = fmt.Errorf("A exist instance on this node running with %d", existPid)
+			return err
+		}
+
+		// Issue will exist if we use Update here
+		// since multiple instances share the same netns but not processns will make multiple instances runable
+		// so we always use Create()
+		if _, err := client.Create(nodePath, pid, ttl); err != nil {
+			// multiple instances might be waiting on this node
+			log.Printf("No instance exist on this node, waiting ttl to expire")
+			time.Sleep(time.Second)
+		} else {
+			log.Printf("No instance exist on this node, starting")
+			go func() {
+				sleeptime := time.Duration(ttl / 3)
+				for {
+					time.Sleep(sleeptime * time.Second)
+					// update the ttl periodically, should never get error
+					_, err = client.CompareAndSwap(nodePath, pid, ttl, pid, 0)
+					if err != nil {
+						log.Fatal(err)
+					}
+				}
+			}()
+			return nil
+		}
+	}
 }
 
 // leader election can take some time to wait ttl expires
@@ -161,7 +182,7 @@ func main() {
 	}
 
 	director := NewLdirector(*clusterName, client)
-	log.Printf("Starting with ip: %s", director.IPAddress)
+	log.Printf("Starting with node: %s", director.NodePath())
 	if err = director.Register(ttl); err != nil {
 		log.Fatal(err)
 	}
