@@ -112,7 +112,10 @@ func (l *Ldirector) Register(ttl uint64) error {
 		// since multiple instances share the same netns but not processns will make multiple instances runable
 		// so we always use Create()
 		if _, err := client.Create(nodePath, pid, ttl); err != nil {
-			// multiple instances might be waiting on this node
+			// to avoid the following race conditions:
+			// 1. multiple instances might be waiting on this node
+			// 2. a instance on same node shares same netns but different processns, will
+			// 	cause this looping forever
 			log.Printf("No instance exist on this node, waiting ttl to expire")
 			time.Sleep(time.Second)
 		} else {
