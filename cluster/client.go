@@ -20,16 +20,16 @@ import (
 // v2/keys
 //     ├── serviceName
 //     │        ├── cluster1
-//     │        │     ├── leader ── id {pid}
+//     │        │     ├── leader ── id {ip}
 //     │        │     ├── resource
 //     │        │     │    ├── createdIndex
 //     │        │     │    ├── ...
 //     │        │     │    └── createdIndexN
 //     │        │     ├── node
-//     │        │     │    ├── node1 {ip}
-//     │        │     │    ├── node2
+//     │        │     │    ├── (node1) ip1 {pid}
+//     │        │     │    ├── (node2) ip2
 //     │        │     │    ├── ...
-//     │        │     │    └── nodeN
+//     │        │     │    └── (nodeN) ipN
 //     │        │     └── config
 //     │        │
 //     │        ├── clusterN
