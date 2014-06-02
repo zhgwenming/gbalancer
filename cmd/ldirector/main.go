@@ -26,13 +26,13 @@ const (
 // v2/keys
 //     ├── serviceName
 //     │        ├── cluster1
-//     │        │     ├── leader ── id
+//     │        │     ├── leader ── id {pid}
 //     │        │     ├── resource
 //     │        │     │    ├── createdIndex
 //     │        │     │    ├── ...
 //     │        │     │    └── createdIndexN
 //     │        │     ├── node
-//     │        │     │    ├── node1
+//     │        │     │    ├── node1 {ip}
 //     │        │     │    ├── node2
 //     │        │     │    ├── ...
 //     │        │     │    └── nodeN
