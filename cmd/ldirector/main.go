@@ -26,9 +26,13 @@ const (
 //     │        ├── cluster1
 //     │        │     ├── leader ── id
 //     │        │     ├── resource
+//     │        │     │    ├── createdIndex
+//     │        │     │    ├── ...
+//     │        │     │    └── createdIndexN
 //     │        │     ├── node
 //     │        │     │    ├── node1
 //     │        │     │    ├── node2
+//     │        │     │    ├── ...
 //     │        │     │    └── nodeN
 //     │        │     └── config
 //     │        │
@@ -38,12 +42,15 @@ const (
 
 type Ldirector struct {
 	ClusterName string
-	Identity    string
 	etcdClient  *etcd.Client
+	IPAddress   string
+	Pid         string
 }
 
-func NewLdirector(name, id string, etc *etcd.Client) *Ldirector {
-	return &Ldirector{name, id, etc}
+func NewLdirector(name string, etc *etcd.Client) *Ldirector {
+	ip := utils.GetFirstIPAddr()
+	pid := strconv.Itoa(os.Getpid())
+	return &Ldirector{name, etc, ip, pid}
 }
 
 func (l Ldirector) Prefix() string {
@@ -52,11 +59,25 @@ func (l Ldirector) Prefix() string {
 
 func (l Ldirector) LeaderPath() string {
 	return path.Join(l.Prefix(), "leader", "id")
-
 }
+
+func (l Ldirector) NodePath() string {
+	return path.Join(l.Prefix(), "node", l.IPAddress)
+}
+
+func (l *Ldirector) Register(ttl uint64) error {
+	client := l.etcdClient
+	id := l.IPAddress
+
+	nodePath := l.NodePath()
+
+	_, err := client.Create(nodePath, id, ttl)
+	return err
+}
+
 func (l *Ldirector) BecomeLeader(ttl uint64) {
 	client := l.etcdClient
-	id := l.Identity
+	id := l.IPAddress
 	sleeptime := time.Duration(ttl / 3)
 	//log.Printf("Sleep time is %d", sleeptime)
 
@@ -96,16 +117,13 @@ func main() {
 	//}
 	//cl := etcd.NewClient(server)
 
-	identity := utils.GetFirstIPAddr()
-	identity += "_" + strconv.Itoa(os.Getpid())
-	log.Printf("Starting with identity: %s", identity)
-
-	cl, err := etcd.NewClientFromFile("config.json")
+	client, err := etcd.NewClientFromFile("config.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	director := NewLdirector(*clusterName, identity, cl)
+	director := NewLdirector(*clusterName, client)
+	log.Printf("Starting with ip: %s", director.IPAddress)
 	director.BecomeLeader(ttl)
 
 }
