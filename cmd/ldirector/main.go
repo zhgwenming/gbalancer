@@ -5,6 +5,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/zhgwenming/gbalancer/utils"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -67,12 +69,43 @@ func (l Ldirector) NodePath() string {
 
 func (l *Ldirector) Register(ttl uint64) error {
 	client := l.etcdClient
-	id := l.IPAddress
+	pid := l.Pid
 
 	nodePath := l.NodePath()
 
-	_, err := client.Create(nodePath, id, ttl)
-	return err
+	resp, err := client.Get(nodePath, false, false)
+	if err != nil {
+		log.Printf("%s", err)
+		_, err = client.Create(nodePath, pid, ttl)
+
+		return err
+	} else {
+		// found a exist node
+		value := resp.Node.Value
+		existPid, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+		log.Printf("Found a instance on this node: %d", existPid)
+
+		// find the process
+		// err always is nil on unix systems, so ignore it
+		process, _ := os.FindProcess(existPid)
+
+		err = process.Signal(syscall.Signal(0))
+		//fmt.Printf("process.Signal on pid %d returned: %v\n", existPid, err)
+
+		if err == nil {
+			err = errors.New("A instance exist on this node")
+			return err
+		} else {
+			// process doesn't exist on this machine, update the node to this instance
+			log.Printf("Instance dead, replacing node %s to pid %s", nodePath, pid)
+			_, err = client.Update(nodePath, pid, ttl)
+			return err
+		}
+	}
+
 }
 
 func (l *Ldirector) BecomeLeader(ttl uint64) {
@@ -124,6 +157,10 @@ func main() {
 
 	director := NewLdirector(*clusterName, client)
 	log.Printf("Starting with ip: %s", director.IPAddress)
+	if err = director.Register(ttl); err != nil {
+		log.Fatal(err)
+	}
+
 	director.BecomeLeader(ttl)
 
 }
