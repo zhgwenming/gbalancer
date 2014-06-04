@@ -19,7 +19,7 @@ type IPvs struct {
 	Addr      string
 	Port      string
 	Scheduler string
-	done      <-chan int
+	done      <-chan struct{}
 	WGroup    *sync.WaitGroup
 	backends  map[string]string
 	Persist   int
@@ -29,7 +29,7 @@ var (
 	log = logger.NewLogger()
 )
 
-func NewIPvs(addr, port, sch string, done <-chan int, wgroup *sync.WaitGroup) *IPvs {
+func NewIPvs(addr, port, sch string, done <-chan struct{}, wgroup *sync.WaitGroup) *IPvs {
 	backends := make(map[string]string, 4)
 	return &IPvs{addr, port, sch, done, wgroup, backends, 300}
 }

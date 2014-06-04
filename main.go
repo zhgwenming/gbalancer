@@ -77,7 +77,7 @@ func main() {
 
 	go wgl.Monitor()
 
-	done := make(chan int, 1)
+	done := make(chan struct{})
 	if *ipvsMode {
 		wgroup.Add(1)
 		if *ipvsRemote {
@@ -115,7 +115,7 @@ func main() {
 	}
 	for sig := range sigChan {
 		log.Printf("captured %v, exiting..", sig)
-		done <- 1
+		close(done)
 		wgroup.Wait()
 		return
 	}
