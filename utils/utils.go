@@ -7,6 +7,7 @@ package utils
 import (
 	"fmt"
 	logger "github.com/zhgwenming/gbalancer/log"
+	"math/rand"
 	"net"
 	"os/exec"
 	"strings"
@@ -74,4 +75,17 @@ func GetIPAddrs() (addresses []string) {
 	}
 	//log.Printf("%v", addresses)
 	return
+}
+
+func Shuffle(src []string) []string {
+	length := len(src)
+
+	dst := make([]string, length)
+	perm := rand.Perm(length)
+
+	for i, v := range perm {
+		dst[v] = src[i]
+	}
+
+	return dst
 }
