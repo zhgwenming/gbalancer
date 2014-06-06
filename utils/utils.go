@@ -42,7 +42,7 @@ func GetFirstIPAddr() (addr string) {
 		ipnet, ok := i.(*net.IPNet)
 
 		if !ok {
-			log.Fatal("assertion err: %v\n", ipnet)
+			log.Fatal("assertion err:", i)
 		}
 
 		ip4 := ipnet.IP.To4()
@@ -62,7 +62,7 @@ func GetIPAddrs() (addresses []string) {
 		ipnet, ok := i.(*net.IPNet)
 
 		if !ok {
-			log.Fatal("assertion err: %v\n", ipnet)
+			log.Fatal("assertion err: ", i)
 		}
 
 		ip4 := ipnet.IP.To4()
