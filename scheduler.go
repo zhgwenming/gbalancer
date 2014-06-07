@@ -9,6 +9,7 @@ import (
 	//splice "github.com/creack/go-splice"
 	"io"
 	//"log"
+	"github.com/zhgwenming/gbalancer/utils"
 	"net"
 	"time"
 )
@@ -54,8 +55,14 @@ func (s *Scheduler) schedule(job chan *Request, status <-chan map[string]int) {
 				}
 			}
 
+			var addrs []string
 			// the rest of active backends, add them
-			for addr, _ := range backends {
+			for addr := range backends {
+				addrs = append(addrs, addr)
+			}
+
+			addrs = utils.Shuffle(addrs)
+			for _, addr := range addrs {
 				s.AddBackend(addr)
 			}
 
