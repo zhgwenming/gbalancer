@@ -1,9 +1,9 @@
 {
-    "User": "monitor",
-    "Pass": "3FNg6IKe",
-    "Addr": "127.0.0.1",
-    "Port": "3307",
-    "Backend": [
+    "user": "monitor",
+    "pass": "3FNg6IKe",
+    "addr": "127.0.0.1",
+    "port": "3307",
+    "backend": [
         "11.100.91.72:3306",
         "10.100.91.71:3306"
     ]
