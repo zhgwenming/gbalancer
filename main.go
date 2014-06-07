@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/zhgwenming/gbalancer/config"
 	"github.com/zhgwenming/gbalancer/engine"
 	logger "github.com/zhgwenming/gbalancer/log"
@@ -31,21 +32,31 @@ type Forwarder struct {
 }
 
 var (
-	wgroup     = &sync.WaitGroup{}
-	log        = logger.NewLogger()
-	sigChan    = make(chan os.Signal, 1)
-	configFile = flag.String("config", "gbalancer.json", "Configuration file")
-	daemonMode = flag.Bool("daemon", false, "daemon mode")
-	ipvsMode   = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
-	ipvsRemote = flag.Bool("remote", false, "independent director")
+	wgroup       = &sync.WaitGroup{}
+	log          = logger.NewLogger()
+	sigChan      = make(chan os.Signal, 1)
+	configFile   = flag.String("config", "gbalancer.json", "Configuration file")
+	daemonMode   = flag.Bool("daemon", false, "daemon mode")
+	ipvsMode     = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
+	ipvsRemote   = flag.Bool("remote", false, "independent director")
+	printVersion = flag.Bool("version", false, "print gbalancer version")
 )
 
 func init() {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 }
 
+func PrintVersion() {
+	fmt.Printf("gbalancer version: %s\n", VERSION)
+	os.Exit(0)
+}
+
 func main() {
 	flag.Parse()
+
+	if *printVersion {
+		PrintVersion()
+	}
 
 	file, _ := os.Open(*configFile)
 

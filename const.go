@@ -11,6 +11,7 @@ const (
 )
 
 const (
+	VERSION       = "0.3"
 	ListenAddr    = "127.0.0.1"
 	ListenPort    = "3306"
 	IPvsLocalAddr = "127.1.1.1"
