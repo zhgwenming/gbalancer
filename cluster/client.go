@@ -101,10 +101,43 @@ func (l *Client) FindInstance() (int, error) {
 	}
 }
 
+func (l *Client) Lock(key, value string, ttl uint64) error {
+	client := l.etcdClient
+
+	// Issue will exist if we use Update here
+	// since multiple instances share the same netns but not processns will make multiple instances runable
+	// so we always use Create()
+	if resp, err := client.Create(key, value, ttl); err != nil {
+		// to avoid the following race conditions:
+		// 1. multiple instances might be waiting on this node
+		// 2. a instance on same node shares same netns but different processns, will
+		// 	cause this looping forever
+		log.Printf("Error to create node: %s", err)
+		return err
+	} else {
+		//log.Printf("No instance exist on this node, starting")
+		go func() {
+			sleeptime := time.Duration(ttl / 3)
+			for {
+				index := resp.EtcdIndex
+				time.Sleep(sleeptime * time.Second)
+				// update the ttl periodically
+				// error might happens for the following cases:
+				// 1. node got modified unexpectedly
+				// 2. we got stopped, process stucked
+				resp, err = client.CompareAndSwap(key, value, ttl, value, index)
+				if err != nil {
+					log.Fatal("Unexpected lost our node lock", err)
+				}
+			}
+		}()
+		return nil
+	}
+}
+
 // Node Register, dead instance on same node should be replaced ASAP
 // to avoid service redistribution
 func (l *Client) Register(ttl uint64) error {
-	client := l.etcdClient
 	pid := l.Pid
 	nodePath := l.NodePath()
 
@@ -117,29 +150,11 @@ func (l *Client) Register(ttl uint64) error {
 			return err
 		}
 
-		// Issue will exist if we use Update here
-		// since multiple instances share the same netns but not processns will make multiple instances runable
-		// so we always use Create()
-		if _, err := client.Create(nodePath, pid, ttl); err != nil {
-			// to avoid the following race conditions:
-			// 1. multiple instances might be waiting on this node
-			// 2. a instance on same node shares same netns but different processns, will
-			// 	cause this looping forever
-			log.Printf("No instance exist on this node, waiting ttl to expire")
+		if err := l.Lock(nodePath, pid, ttl); err != nil {
 			time.Sleep(time.Second)
+			continue
 		} else {
 			log.Printf("No instance exist on this node, starting")
-			go func() {
-				sleeptime := time.Duration(ttl / 3)
-				for {
-					time.Sleep(sleeptime * time.Second)
-					// update the ttl periodically, should never get error
-					_, err = client.CompareAndSwap(nodePath, pid, ttl, pid, 0)
-					if err != nil {
-						log.Fatal(err)
-					}
-				}
-			}()
 			return nil
 		}
 	}
