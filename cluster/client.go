@@ -104,6 +104,8 @@ func (l *Client) FindInstance() (int, error) {
 func (l *Client) Lock(key, value string, ttl uint64) error {
 	client := l.etcdClient
 
+	// curl -X PUT http://127.0.0.1:4001/mod/v2/leader/{clustername}?ttl=60 -d name=servername
+	// not supported by etcd client yet.
 	// Issue will exist if we use Update here
 	// since multiple instances share the same netns but not processns will make multiple instances runable
 	// so we always use Create()
@@ -135,8 +137,8 @@ func (l *Client) Lock(key, value string, ttl uint64) error {
 	}
 }
 
-// Node Register, dead instance on same node should be replaced ASAP
-// to avoid service redistribution
+// Node Register, dead instance on same node should be
+// replaced ASAP to avoid service redistribution
 func (l *Client) Register(ttl uint64) error {
 	pid := l.Pid
 	nodePath := l.NodePath()
@@ -150,13 +152,13 @@ func (l *Client) Register(ttl uint64) error {
 			return err
 		}
 
-		if err := l.Lock(nodePath, pid, ttl); err != nil {
-			time.Sleep(time.Second)
-			continue
-		} else {
+		if err := l.Lock(nodePath, pid, ttl); err == nil {
 			log.Printf("No instance exist on this node, starting")
 			return nil
 		}
+
+		// retry after 1s
+		time.Sleep(time.Second)
 	}
 }
 
@@ -171,23 +173,12 @@ func (l *Client) BecomeLeader(ttl uint64) {
 	log.Printf("leader path: %s", leaderPath)
 
 	for {
-		// curl -X PUT http://127.0.0.1:4001/mod/v2/leader/{clustername}?ttl=60 -d name=servername
-		// not supported by etcd client yet
-		// so we create a new key and ignore the return value first.
-		if _, err := client.Create(leaderPath, id, ttl); err != nil {
-			time.Sleep(5 * time.Second)
-		} else {
+		if err := l.Lock(leaderPath, id, ttl); err == nil {
 			log.Printf("No leader exist, taking the leadership")
-			go func() {
-				for {
-					time.Sleep(sleeptime * time.Second)
-					// update the ttl periodically, should never get error
-					_, err = client.CompareAndSwap(leaderPath, id, ttl, id, 0)
-					if err != nil {
-						log.Fatal(err)
-					}
-				}
-			}()
+			return
 		}
+
+		// retry after 5 secs
+		time.Sleep(5 * time.Second)
 	}
 }
