@@ -8,6 +8,7 @@ import (
 	"flag"
 	"github.com/zhgwenming/gbalancer/cluster"
 	"log"
+	"time"
 )
 
 const (
@@ -28,5 +29,7 @@ func main() {
 	}
 
 	director.BecomeLeader(ttl)
-
+	for {
+		time.Sleep(time.Second)
+	}
 }

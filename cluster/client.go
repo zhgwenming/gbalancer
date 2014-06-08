@@ -154,7 +154,7 @@ func (l *Client) Register(ttl uint64) error {
 		}
 
 		if err := l.Lock(nodePath, pid, ttl); err == nil {
-			log.Printf("No instance exist on this node, starting")
+			log.Printf("Client registered")
 			return nil
 		}
 
