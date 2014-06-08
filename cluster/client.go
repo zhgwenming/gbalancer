@@ -120,6 +120,7 @@ func (l *Client) Lock(key, value string, ttl uint64) error {
 		//log.Printf("No instance exist on this node, starting")
 		go func() {
 			sleeptime := time.Duration(ttl / 3)
+			//log.Printf("Sleep time is %d", sleeptime)
 			for {
 				index := resp.EtcdIndex
 				time.Sleep(sleeptime * time.Second)
@@ -164,10 +165,7 @@ func (l *Client) Register(ttl uint64) error {
 
 // leader election can take some time to wait ttl expires
 func (l *Client) BecomeLeader(ttl uint64) {
-	client := l.etcdClient
 	id := l.IPAddress
-	sleeptime := time.Duration(ttl / 3)
-	//log.Printf("Sleep time is %d", sleeptime)
 
 	leaderPath := l.LeaderPath()
 	log.Printf("leader path: %s", leaderPath)
