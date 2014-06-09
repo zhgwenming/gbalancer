@@ -166,9 +166,15 @@ func (s *Scheduler) finish(req *Request) {
 			req.conn.Close()
 		}
 	} else {
-		heap.Remove(&s.pool, backend.index)
-		backend.ongoing--
-		heap.Push(&s.pool, backend)
+		if backend.index == -1 {
+			// in case the wrangler already detected error of this backend
+			// which makes this backend already removed from the heap pool
+			backend.ongoing--
+		} else {
+			heap.Remove(&s.pool, backend.index)
+			backend.ongoing--
+			heap.Push(&s.pool, backend)
+		}
 		req.conn.Close()
 	}
 }
