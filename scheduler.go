@@ -148,16 +148,23 @@ func (s *Scheduler) run(req *Request) {
 func (s *Scheduler) finish(req *Request) {
 	backend, err := req.backend, req.err
 
-	// retry the connection is it failed on dial
-	if e, ok := err.(*net.OpError); ok && e.Op == "dial" {
-		// detected the connection error
-		// keep it out of the heap and try to reschedule the job
+	if err != nil {
+		// keep it out of the heap
 		if backend.index != -1 {
 			heap.Remove(&s.pool, backend.index)
 		}
 		backend.ongoing--
-		log.Printf("%s, rescheduling reqest %v\n", err, req)
-		s.dispatch(req)
+
+		// retry the connection is it failed on dial
+		if e, ok := err.(*net.OpError); ok && e.Op == "dial" {
+			// detected the connection error
+			// keep it out of the heap and try to reschedule the job
+			log.Printf("%s, rescheduling request %v\n", err, req)
+			s.dispatch(req)
+		} else {
+			//log.Printf("%s, closing request %v\n", err, req)
+			req.conn.Close()
+		}
 	} else {
 		heap.Remove(&s.pool, backend.index)
 		backend.ongoing--
