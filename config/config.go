@@ -13,4 +13,3 @@ type Configuration struct {
 	Port       string
 	Backend    []string
 }
-
