@@ -1,0 +1,24 @@
+{
+	"ImportPath": "github.com/zhgwenming/gbalancer",
+	"GoVersion": "go1.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/alexzorin/libvirt-go",
+			"Comment": "v2.6.0-2-g99d0178",
+			"Rev": "99d0178daa068fd3a437c218c559e3d3bee4228b"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-etcd/etcd",
+			"Comment": "v0.2.0-rc1-73-g895202b",
+			"Rev": "895202b626e0ff14fb87457c12112ed109b71b53"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "go1",
+			"Rev": "9a7aa3606b82e2081a13a008ada88dfdb96c20fd"
+		}
+	]
+}
