@@ -22,7 +22,7 @@ type Scheduler struct {
 }
 
 func NewScheduler() *Scheduler {
-	pool := make(Pool, 0, MaxForwarders)
+	pool := Pool{make([]*Backend, 0, MaxForwarders)}
 	backends := make(map[string]*Backend, MaxBackends)
 	done := make(chan *Request, MaxForwarders)
 	pending := make([]*Request, 0, MaxForwarders)
@@ -67,7 +67,7 @@ func (s *Scheduler) schedule(job chan *Request, status <-chan map[string]int) {
 			}
 
 			// drain the pending list
-			if len(s.pending) > 0 && len(s.pool) > 0 {
+			if len(s.pending) > 0 && len(s.pool.backends) > 0 {
 				for _, p := range s.pending {
 					s.dispatch(p)
 				}
@@ -75,7 +75,7 @@ func (s *Scheduler) schedule(job chan *Request, status <-chan map[string]int) {
 			}
 		case j := <-job:
 			// add to pending list
-			if len(s.pool) == 0 {
+			if len(s.pool.backends) == 0 {
 				s.pending = append(s.pending, j)
 				log.Printf("No backend available\n")
 				continue
