@@ -6,6 +6,8 @@ package main
 
 type Pool struct {
 	backends []*Backend
+	// max/min heap
+	max bool
 }
 
 func (p Pool) Len() int {
@@ -13,7 +15,11 @@ func (p Pool) Len() int {
 }
 
 func (p Pool) Less(i, j int) bool {
-	return p.backends[i].ongoing < p.backends[j].ongoing
+	if p.max {
+		return p.backends[i].ongoing > p.backends[j].ongoing
+	} else {
+		return p.backends[i].ongoing < p.backends[j].ongoing
+	}
 }
 
 func (p *Pool) Swap(i, j int) {

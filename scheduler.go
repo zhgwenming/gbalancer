@@ -21,8 +21,9 @@ type Scheduler struct {
 	pending  []*Request
 }
 
-func NewScheduler() *Scheduler {
-	pool := Pool{make([]*Backend, 0, MaxForwarders)}
+// it's a max heap if we do persistent scheduling
+func NewScheduler(max bool) *Scheduler {
+	pool := Pool{make([]*Backend, 0, MaxForwarders), max}
 	backends := make(map[string]*Backend, MaxBackends)
 	done := make(chan *Request, MaxForwarders)
 	pending := make([]*Request, 0, MaxForwarders)

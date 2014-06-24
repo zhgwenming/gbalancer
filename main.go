@@ -36,7 +36,7 @@ var (
 	log          = logger.NewLogger()
 	sigChan      = make(chan os.Signal, 1)
 	configFile   = flag.String("config", "gbalancer.json", "Configuration file")
-	persistent   = flag.Bool("persisten", true, "whether to enable persistent mode for scheduling")
+	persistent   = flag.Bool("persistent", true, "whether to enable persistent mode for scheduling")
 	daemonMode   = flag.Bool("daemon", false, "daemon mode")
 	ipvsMode     = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
 	ipvsRemote   = flag.Bool("remote", false, "independent director")
@@ -110,7 +110,7 @@ func main() {
 		job := make(chan *Request)
 
 		// start the scheduler
-		sch := NewScheduler()
+		sch := NewScheduler(*persistent)
 		go sch.schedule(job, status)
 
 		go func() {
