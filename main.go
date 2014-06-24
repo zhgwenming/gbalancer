@@ -15,6 +15,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 )
@@ -53,6 +54,8 @@ func PrintVersion() {
 }
 
 func main() {
+	n := runtime.GOMAXPROCS(runtime.NumCPU())
+
 	flag.Parse()
 
 	if *printVersion {
