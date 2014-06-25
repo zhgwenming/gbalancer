@@ -26,7 +26,7 @@ type Wrangler struct {
 	BackChan   chan<- map[string]int
 }
 
-func NewWrangler(config config.Configuration, back chan<- map[string]int) *Wrangler {
+func NewWrangler(config *config.Configuration, back chan<- map[string]int) *Wrangler {
 	var hexec healthDriver
 	switch config.Service {
 	case "galera":

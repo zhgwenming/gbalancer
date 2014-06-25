@@ -5,7 +5,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/zhgwenming/gbalancer/config"
@@ -62,20 +61,11 @@ func main() {
 		PrintVersion()
 	}
 
-	file, _ := os.Open(*configFile)
-
 	if *daemonMode {
 		os.Chdir("/")
 	}
 
-	decoder := json.NewDecoder(file)
-	settings := config.Configuration{
-		Service: "galera",
-		Addr:    "127.0.0.1",
-		Port:    "3306",
-	}
-
-	err := decoder.Decode(&settings)
+	settings, err := config.LoadConfig(*configFile)
 	if err != nil {
 		log.Println("error:", err)
 	}
