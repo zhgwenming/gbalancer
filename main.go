@@ -82,8 +82,6 @@ func main() {
 
 	// for compatible reason, may remove in the future
 	if config.Addr != "" {
-		fmt.Printf("Warning, 'Addr' directive will be removed in the future.\n" +
-			"Please use 'Listen' form instead.\n")
 		tcpAddr := "tcp://" + config.Addr + ":" + config.Port
 		config.AddListen(tcpAddr)
 	}
