@@ -37,7 +37,6 @@ var (
 	log          = logger.NewLogger()
 	sigChan      = make(chan os.Signal, 1)
 	configFile   = flag.String("config", "gbalancer.json", "Configuration file")
-	unixSocket   = flag.Bool("unixsock", false, "listen to unix domain socket in addition - default path /var/lib/mysql/mysql.sock")
 	failover     = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
 	daemonMode   = flag.Bool("daemon", false, "daemon mode")
 	ipvsMode     = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
@@ -71,22 +70,26 @@ func main() {
 
 	decoder := json.NewDecoder(file)
 	config := config.Configuration{
-		Service:    "galera",
-		Addr:       "127.0.0.1",
-		Port:       "3306",
-		UnixSocket: DEFAULT_UNIX_SOCKET,
+		Service: "galera",
+		Addr:    "127.0.0.1",
+		Port:    "3306",
 	}
 
 	err := decoder.Decode(&config)
 	if err != nil {
 		log.Println("error:", err)
 	}
-	//log.Printf("%v", config)
-	log.Printf("Listen on %s:%s, backend: %v", config.Addr, config.Port, config.Backend)
 
 	// for compatible reason, may remove in the future
-	tcpAddr := "tcp://" + config.Addr + ":" + config.Port
-	config.AddListen(tcpAddr)
+	if config.Addr != "" {
+		fmt.Printf("Warning, 'Addr' directive will be removed in the future.\n" +
+			"Please use 'Listen' form instead.\n")
+		tcpAddr := "tcp://" + config.Addr + ":" + config.Port
+		config.AddListen(tcpAddr)
+	}
+
+	//log.Printf("%v", config)
+	log.Printf(config.ListenInfo())
 
 	status := make(chan map[string]int, MaxBackends)
 	//status := make(chan *BEStatus)

@@ -26,9 +26,12 @@ type Configuration struct {
 	Pass       string
 	Addr       string
 	Port       string
-	UnixSocket string
 	Listen     []string
 	Backend    []string
+}
+
+func (c *Configuration) ListenInfo() string {
+	return fmt.Sprintf("Listen on %v, backend: %v", c.Listen, c.Backend)
 }
 
 func (c *Configuration) AddListen(listen string) {
