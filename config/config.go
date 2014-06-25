@@ -6,12 +6,17 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"strings"
 )
 
 type ListenAddr struct {
 	net   string
 	laddr string
+}
+
+func (l *ListenAddr) Listen() (net.Listener, error) {
+	return net.Listen(l.net, l.laddr)
 }
 
 type Configuration struct {
