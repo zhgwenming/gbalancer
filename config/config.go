@@ -5,9 +5,15 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"strings"
+)
+
+const (
+	DEFAULT_UNIX_SOCKET = "/var/lib/mysql/mysql.sock"
 )
 
 type ListenAddr struct {
@@ -17,6 +23,25 @@ type ListenAddr struct {
 
 func (l *ListenAddr) Listen() (net.Listener, error) {
 	return net.Listen(l.net, l.laddr)
+}
+
+func LoadConfig(configFile string) (*Configuration, error) {
+	file, err := os.Open(configFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(file)
+	config := &Configuration{
+		Service: "galera",
+		Addr:    "127.0.0.1",
+		Port:    "3306",
+	}
+
+	err = decoder.Decode(config)
+
+	return config, err
 }
 
 type Configuration struct {
@@ -46,7 +71,17 @@ func (c *Configuration) GetListenAddrs() ([]ListenAddr, error) {
 			err := fmt.Errorf("incorrect listen addr %s", l)
 			return laddrs, err
 		}
-		addr := ListenAddr{protoAddrParts[0], protoAddrParts[1]}
+
+		net, laddr := protoAddrParts[0], protoAddrParts[1]
+
+		var addr ListenAddr
+		if net == "unix" {
+			if laddr == "/" || laddr == "/default" {
+				addr = ListenAddr{net, DEFAULT_UNIX_SOCKET}
+			} else {
+				addr = ListenAddr{net, laddr}
+			}
+		}
 		laddrs = append(laddrs, addr)
 	}
 
