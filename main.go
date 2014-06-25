@@ -69,31 +69,31 @@ func main() {
 	}
 
 	decoder := json.NewDecoder(file)
-	config := config.Configuration{
+	settings := config.Configuration{
 		Service: "galera",
 		Addr:    "127.0.0.1",
 		Port:    "3306",
 	}
 
-	err := decoder.Decode(&config)
+	err := decoder.Decode(&settings)
 	if err != nil {
 		log.Println("error:", err)
 	}
 
 	// for compatible reason, may remove in the future
-	if config.Addr != "" {
-		tcpAddr := "tcp://" + config.Addr + ":" + config.Port
-		config.AddListen(tcpAddr)
+	if settings.Addr != "" {
+		tcpAddr := "tcp://" + settings.Addr + ":" + settings.Port
+		settings.AddListen(tcpAddr)
 	}
 
 	//log.Printf("%v", config)
-	log.Printf(config.ListenInfo())
+	log.Printf(settings.ListenInfo())
 
 	status := make(chan map[string]int, MaxBackends)
 	//status := make(chan *BEStatus)
 
 	// start the wrangler
-	wgl := wrangler.NewWrangler(config, status)
+	wgl := wrangler.NewWrangler(settings, status)
 
 	go wgl.Monitor()
 
@@ -101,11 +101,11 @@ func main() {
 	if *ipvsMode {
 		wgroup.Add(1)
 		if *ipvsRemote {
-			ipvs := engine.NewIPvs(config.Addr, config.Port, "wlc", done, wgroup)
+			ipvs := engine.NewIPvs(settings.Addr, settings.Port, "wlc", done, wgroup)
 			go ipvs.RemoteSchedule(status)
 		} else {
-			//ipvs := NewIPvs(IPvsLocalAddr, config.Port, "sh", done)
-			ipvs := engine.NewIPvs(IPvsLocalAddr, config.Port, "wlc", done, wgroup)
+			//ipvs := NewIPvs(IPvsLocalAddr, settings.Port, "sh", done)
+			ipvs := engine.NewIPvs(IPvsLocalAddr, settings.Port, "wlc", done, wgroup)
 			go ipvs.LocalSchedule(status)
 		}
 	} else {
@@ -115,7 +115,7 @@ func main() {
 		sch := NewScheduler(*failover)
 		go sch.schedule(job, status)
 
-		listenAddrs, err := config.GetListenAddrs()
+		listenAddrs, err := settings.GetListenAddrs()
 		if err != nil {
 			log.Fatal(err)
 		}
