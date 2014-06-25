@@ -84,7 +84,9 @@ func main() {
 	//log.Printf("%v", config)
 	log.Printf("Listen on %s:%s, backend: %v", config.Addr, config.Port, config.Backend)
 
-	tcpAddr := config.Addr + ":" + config.Port
+	// for compatible reason, may remove in the future
+	tcpAddr := "tcp://" + config.Addr + ":" + config.Port
+	config.AddListen(tcpAddr)
 
 	status := make(chan map[string]int, MaxBackends)
 	//status := make(chan *BEStatus)
@@ -106,42 +108,28 @@ func main() {
 			go ipvs.LocalSchedule(status)
 		}
 	} else {
-		listener, err := net.Listen("tcp", tcpAddr)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
 		job := make(chan *Request)
 
 		// start the scheduler
 		sch := NewScheduler(*failover)
 		go sch.schedule(job, status)
 
-		// tcp listener
-		go func() {
-			for {
-				conn, err := listener.Accept()
-				if err != nil {
-					log.Printf("%s\n", err)
-				}
-				//log.Println("main: got a connection")
-				req := &Request{conn: conn}
-				job <- req
-			}
-		}()
+		listenAddrs, err := config.GetListenAddrs()
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		// unix listener
-		if *unixSocket {
-			ul, err := net.Listen("unix", config.UnixSocket)
+		for _, listenAddr := range listenAddrs {
+			listener, err := listenAddr.Listen()
 
 			if err != nil {
-				fmt.Printf("%s\n", err)
 				log.Fatal(err)
 			}
+
+			// tcp listener
 			go func() {
 				for {
-					conn, err := ul.Accept()
+					conn, err := listener.Accept()
 					if err != nil {
 						log.Printf("%s\n", err)
 					}
@@ -152,6 +140,8 @@ func main() {
 			}()
 		}
 	}
+
+	// waiting for exit signals
 	for sig := range sigChan {
 		log.Printf("captured %v, exiting..", sig)
 		close(done)
