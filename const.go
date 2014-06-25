@@ -11,10 +11,11 @@ const (
 )
 
 const (
-	VERSION       = "0.4"
-	ListenAddr    = "127.0.0.1"
-	ListenPort    = "3306"
-	IPvsLocalAddr = "127.1.1.1"
+	VERSION             = "0.4"
+	ListenAddr          = "127.0.0.1"
+	ListenPort          = "3306"
+	IPvsLocalAddr       = "127.1.1.1"
+	DEFAULT_UNIX_SOCKET = "/var/lib/mysql/mysql.sock"
 )
 
 const (

@@ -11,5 +11,6 @@ type Configuration struct {
 	Pass       string
 	Addr       string
 	Port       string
+	UnixSocket string
 	Backend    []string
 }

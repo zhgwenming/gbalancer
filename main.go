@@ -37,6 +37,7 @@ var (
 	log          = logger.NewLogger()
 	sigChan      = make(chan os.Signal, 1)
 	configFile   = flag.String("config", "gbalancer.json", "Configuration file")
+	unixSocket   = flag.Bool("unixsock", false, "listen to unix domain socket in addition - default path /var/lib/mysql/mysql.sock")
 	failover     = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
 	daemonMode   = flag.Bool("daemon", false, "daemon mode")
 	ipvsMode     = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
@@ -54,7 +55,7 @@ func PrintVersion() {
 }
 
 func main() {
-	n := runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	flag.Parse()
 
@@ -70,9 +71,10 @@ func main() {
 
 	decoder := json.NewDecoder(file)
 	config := config.Configuration{
-		Service: "galera",
-		Addr:    "127.0.0.1",
-		Port:    "3306",
+		Service:    "galera",
+		Addr:       "127.0.0.1",
+		Port:       "3306",
+		UnixSocket: DEFAULT_UNIX_SOCKET,
 	}
 
 	err := decoder.Decode(&config)
@@ -116,6 +118,7 @@ func main() {
 		sch := NewScheduler(*failover)
 		go sch.schedule(job, status)
 
+		// tcp listener
 		go func() {
 			for {
 				conn, err := listener.Accept()
@@ -127,6 +130,27 @@ func main() {
 				job <- req
 			}
 		}()
+
+		// unix listener
+		if *unixSocket {
+			ul, err := net.Listen("unix", config.UnixSocket)
+
+			if err != nil {
+				fmt.Printf("%s\n", err)
+				log.Fatal(err)
+			}
+			go func() {
+				for {
+					conn, err := ul.Accept()
+					if err != nil {
+						log.Printf("%s\n", err)
+					}
+					//log.Println("main: got a connection")
+					req := &Request{conn: conn}
+					job <- req
+				}
+			}()
+		}
 	}
 	for sig := range sigChan {
 		log.Printf("captured %v, exiting..", sig)
