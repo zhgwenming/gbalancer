@@ -31,6 +31,10 @@ type Configuration struct {
 	Backend    []string
 }
 
+func (c *Configuration) AddListen(listen string) {
+	c.Listen = append(c.Listen, listen)
+}
+
 func (c *Configuration) GetListenAddrs() ([]ListenAddr, error) {
 	laddrs := make([]ListenAddr, 0, len(c.Listen))
 	for _, l := range c.Listen {
