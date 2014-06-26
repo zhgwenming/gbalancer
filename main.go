@@ -113,20 +113,34 @@ func main() {
 		for _, listenAddr := range listenAddrs {
 			listener, err := listenAddr.Listen()
 
+			// close the listener makes the unix socket file got removed
+			wgroup.Add(1)
+			go func() {
+				<-done
+				listener.Close()
+				wgroup.Done()
+			}()
+
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			// tcp listener
+			// tcp/unix listener
 			go func() {
 				for {
-					conn, err := listener.Accept()
-					if err != nil {
-						log.Printf("%s\n", err)
+					if conn, err := listener.Accept(); err == nil {
+						//log.Println("main: got a connection")
+						req := &Request{conn: conn}
+						job <- req
+					} else {
+						if neterr, ok := err.(net.Error); ok && neterr.Temporary() {
+							log.Printf("%s\n", err)
+						} else {
+							// we should got a errClosing
+							log.Printf("Existing listen loop\n")
+							return
+						}
 					}
-					//log.Println("main: got a connection")
-					req := &Request{conn: conn}
-					job <- req
 				}
 			}()
 		}
