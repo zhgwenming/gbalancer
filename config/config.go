@@ -77,11 +77,12 @@ func (c *Configuration) GetListenAddrs() ([]ListenAddr, error) {
 		var addr ListenAddr
 		if net == "unix" {
 			if laddr == "/" || laddr == "/default" {
-				addr = ListenAddr{net, DEFAULT_UNIX_SOCKET}
-			} else {
-				addr = ListenAddr{net, laddr}
+				laddr = DEFAULT_UNIX_SOCKET
 			}
 		}
+
+		addr = ListenAddr{net, laddr}
+
 		laddrs = append(laddrs, addr)
 	}
 
