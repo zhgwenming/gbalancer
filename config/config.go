@@ -76,7 +76,8 @@ func (c *Configuration) GetListenAddrs() ([]ListenAddr, error) {
 
 		var addr ListenAddr
 		if net == "unix" {
-			if laddr == "/" || laddr == "/default" {
+			// unix://default form
+			if laddr == "/" || laddr == "default" {
 				laddr = DEFAULT_UNIX_SOCKET
 			}
 		}
