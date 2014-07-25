@@ -25,8 +25,12 @@ func (h *HealthHTTP) AddDirector(backend string) error {
 }
 
 func httpProbe(addr string) error {
-	_, err := http.Get("http://" + addr + "/")
-	return err
+	resp, err := http.Get("http://" + addr + "/")
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
 }
 
 // check the backend status
