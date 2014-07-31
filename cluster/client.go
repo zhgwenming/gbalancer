@@ -6,7 +6,7 @@ package cluster
 
 import (
 	"fmt"
-	"github.com/coreos/go-etcd/etcd"
+	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/coreos/go-etcd/etcd"
 	"github.com/zhgwenming/gbalancer/utils"
 	"log"
 	"os"

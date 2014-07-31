@@ -7,7 +7,7 @@ package wrangler
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/go-sql-driver/mysql"
 	"strings"
 )
 

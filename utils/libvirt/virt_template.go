@@ -6,7 +6,7 @@ package libvirt
 
 import (
 	"bytes"
-	libvirt "github.com/alexzorin/libvirt-go"
+	libvirt "github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/alexzorin/libvirt-go"
 	"log"
 	"net"
 	"text/template"
