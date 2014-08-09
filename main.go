@@ -67,6 +67,7 @@ func main() {
 
 	settings, err := config.LoadConfig(*configFile)
 	if err != nil {
+		fmt.Printf("error: %s\n", err)
 		log.Fatal("error:", err)
 	}
 
