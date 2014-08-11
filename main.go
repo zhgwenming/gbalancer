@@ -10,6 +10,7 @@ import (
 	"github.com/zhgwenming/gbalancer/config"
 	"github.com/zhgwenming/gbalancer/engine"
 	logger "github.com/zhgwenming/gbalancer/log"
+	"github.com/zhgwenming/gbalancer/utils"
 	"github.com/zhgwenming/gbalancer/wrangler"
 	"net"
 	"os"
@@ -36,6 +37,7 @@ var (
 	log          = logger.NewLogger()
 	sigChan      = make(chan os.Signal, 1)
 	configFile   = flag.String("config", "gbalancer.json", "Configuration file")
+	pidFile      = flag.String("pidfile", "", "pid file")
 	failover     = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
 	daemonMode   = flag.Bool("daemon", false, "daemon mode")
 	ipvsMode     = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
@@ -79,6 +81,13 @@ func main() {
 
 	//log.Printf("%v", config)
 	log.Printf(settings.ListenInfo())
+
+	if *pidFile != "" {
+		if err = utils.WritePid(*pidFile); err != nil {
+			fmt.Printf("error: %s\n", err)
+			log.Fatal("error:", err)
+		}
+	}
 
 	status := make(chan map[string]int, MaxBackends)
 	//status := make(chan *BEStatus)
@@ -152,6 +161,13 @@ func main() {
 		log.Printf("captured %v, exiting..", sig)
 		close(done)
 		wgroup.Wait()
+
+		// remove pid file
+		if *pidFile != "" {
+			if err = os.Remove(*pidFile); err != nil {
+				log.Printf("error to remove pidfile %s:", err)
+			}
+		}
 		return
 	}
 
