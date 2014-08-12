@@ -53,26 +53,55 @@ func ensureCommands(cmds []string) error {
 	return nil
 }
 
+//func getIPAddr() (addr string) {
+//	addrs, _ := net.InterfaceAddrs()
+//	for _, i := range addrs {
+//		ipnet, ok := i.(*net.IPNet)
+//
+//		if !ok {
+//			log.Fatal("assertion err: %v\n", ipnet)
+//		}
+//
+//		ip4 := ipnet.IP.To4()
+//
+//		if !ip4.IsLoopback() {
+//			addr = ip4.String()
+//			break
+//		}
+//	}
+//	log.Printf("%v", addr)
+//	return
+//}
+//
 func getIPAddr() (addr string) {
-	addrs, _ := net.InterfaceAddrs()
-	for _, i := range addrs {
-		ipnet, ok := i.(*net.IPNet)
-
-		if !ok {
-			log.Fatal("assertion err: %v\n", ipnet)
+	ifaces, _ := net.Interfaces()
+	for _, i := range ifaces {
+		if i.Flags&net.FlagLoopback == 0 {
+			continue
 		}
 
-		ip4 := ipnet.IP.To4()
+		if addrs, err := i.Addrs(); err != nil {
+			continue
+		} else {
+			for _, ipaddr := range addrs {
+				ipnet, ok := ipaddr.(*net.IPNet)
 
-		if !ip4.IsLoopback() {
-			addr = ip4.String()
-			break
+				if !ok {
+					log.Fatal("assertion err: %v\n", ipnet)
+				}
+
+				ip4 := ipnet.IP.To4()
+
+				if !ip4.IsLoopback() {
+					addr = ip4.String()
+					break
+				}
+			}
 		}
 	}
 	log.Printf("%v", addr)
 	return
 }
-
 func (i *IPvs) eventLoop(status <-chan map[string]int) {
 	for {
 		select {
