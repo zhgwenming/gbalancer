@@ -1,0 +1,13 @@
+[Unit]
+Description=gbalancer
+Wants=etcd.service
+After=etcd.service
+
+[Service]
+ExecStart=/usr/bin/gbalancer
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
+
