@@ -35,7 +35,7 @@ func NewIPvs(addr, port, sch string, done <-chan struct{}, wgroup *sync.WaitGrou
 }
 
 func runCommand(cmd string) error {
-	args := strings.Split(cmd, " ")
+	args := strings.Fields(cmd)
 	output, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("Err: %s Output: %s, Cmd %s", err, output, cmd)
@@ -159,6 +159,7 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 	defer func() {
 		cmd = "ipvsadm -D -t " + i.Addr + ":" + i.Port
 		runCommand(cmd)
+		i.WGroup.Done()
 	}()
 
 	localAddr := getIPAddr()
@@ -171,11 +172,10 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 	runCommand(cmd)
 
 	defer func() {
-		cmd = "ip route  delete  table local " + i.Addr
+		cmd = "ip route delete table local " + i.Addr
 		runCommand(cmd)
 		cmd = "ip route flush cache"
 		runCommand(cmd)
-		i.WGroup.Done()
 	}()
 
 	i.eventLoop(status)
