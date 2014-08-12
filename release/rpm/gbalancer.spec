@@ -26,7 +26,6 @@ gbalancer orchestration tool
 %setup -q
 
 %build
-#mkdir -p gopath/src/github.com/coreos
 make
 
 %install
