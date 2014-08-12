@@ -20,7 +20,7 @@ BuildRequires:	golang
 #Requires(postun): systemd
 
 %description
-gbalancer orchestration tool
+gbalancer load balancing service
 
 %prep
 %setup -q
@@ -30,17 +30,17 @@ make
 
 %install
 install -D -p  gbalancer %{buildroot}%{_bindir}/gbalancer
-install -D -p -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/%{name}.service
+#install -D -p -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/%{name}.service
 #install -D -p -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/%{name}.socket
 
 %post
-%systemd_post %{name}.service
+#%systemd_post %{name}.service
 
 %preun
-%systemd_preun %{name}.service
+#%systemd_preun %{name}.service
 
 %postun
-%systemd_postun %{name}.service
+#%systemd_postun %{name}.service
 
 %files
 %{_bindir}/gbalancer
