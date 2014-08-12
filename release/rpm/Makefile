@@ -1,5 +1,5 @@
 NAME ?= gbalancer
-VERSION ?= 0.5.3
+VERSION ?= 0.5.4
 NV = $(NAME)-v$(VERSION)
 SPEC_FILE := $(NAME).spec
 TARBALL := $(NV).tar.gz

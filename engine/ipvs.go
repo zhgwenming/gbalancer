@@ -76,7 +76,7 @@ func ensureCommands(cmds []string) error {
 func getIPAddr() (addr string) {
 	ifaces, _ := net.Interfaces()
 	for _, i := range ifaces {
-		if i.Flags&net.FlagLoopback == 0 {
+		if i.Flags&net.FlagLoopback != 0 {
 			continue
 		}
 
