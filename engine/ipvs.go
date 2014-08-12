@@ -75,6 +75,8 @@ func ensureCommands(cmds []string) error {
 //
 func getIPAddr() (addr string) {
 	ifaces, _ := net.Interfaces()
+
+iface:
 	for _, i := range ifaces {
 		if i.Flags&net.FlagLoopback != 0 {
 			continue
@@ -84,6 +86,7 @@ func getIPAddr() (addr string) {
 			continue
 		} else {
 			for _, ipaddr := range addrs {
+				//log.Printf("%v", ipaddr)
 				ipnet, ok := ipaddr.(*net.IPNet)
 
 				if !ok {
@@ -91,15 +94,19 @@ func getIPAddr() (addr string) {
 				}
 
 				ip4 := ipnet.IP.To4()
+				if ip4 == nil {
+					continue
+				}
+				//log.Printf("%v", ip4)
 
 				if !ip4.IsLoopback() {
 					addr = ip4.String()
-					break
+					break iface
 				}
 			}
 		}
 	}
-	log.Printf("%v", addr)
+	log.Printf("Found local ip4 %v", addr)
 	return
 }
 func (i *IPvs) eventLoop(status <-chan map[string]int) {
