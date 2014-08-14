@@ -19,11 +19,12 @@ import (
 )
 
 var (
-	pidFile    = flag.String("pidfile", "", "pid file")
-	listenPort = flag.String("port", ":8080", "port number")
-	log        = logger.NewLogger()
-	sigChan    = make(chan os.Signal, 1)
-	wgroup     = &sync.WaitGroup{}
+	pidFile     = flag.String("pidfile", "", "pid file")
+	listenAddr  = flag.String("listen", ":8080", "port number")
+	serviceAddr = flag.String("srvaddr", "/var/lib/mysql.sock", "service address")
+	log         = logger.NewLogger()
+	sigChan     = make(chan os.Signal, 1)
+	wgroup      = &sync.WaitGroup{}
 )
 
 func init() {
@@ -45,7 +46,7 @@ func main() {
 		}()
 	}
 
-	listener, err := net.Listen("tcp", *listenPort)
+	listener, err := net.Listen("tcp", *listenAddr)
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +60,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			go spdyConn.Serve(spdystream.MirrorStreamHandler)
+			go spdyConn.Serve(AgentStreamHandler)
 		}
 	}()
 
