@@ -19,10 +19,11 @@ import (
 )
 
 var (
-	wgroup  = &sync.WaitGroup{}
-	log     = logger.NewLogger()
-	sigChan = make(chan os.Signal, 1)
-	pidFile = flag.String("pidfile", "", "pid file")
+	pidFile    = flag.String("pidfile", "", "pid file")
+	listenPort = flag.String("port", ":8080", "port number")
+	log        = logger.NewLogger()
+	sigChan    = make(chan os.Signal, 1)
+	wgroup     = &sync.WaitGroup{}
 )
 
 func init() {
@@ -44,7 +45,7 @@ func main() {
 		}()
 	}
 
-	listener, err := net.Listen("tcp", "localhost:8080")
+	listener, err := net.Listen("tcp", *listenPort)
 	if err != nil {
 		panic(err)
 	}
