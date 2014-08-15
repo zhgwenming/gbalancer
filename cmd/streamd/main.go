@@ -20,7 +20,7 @@ import (
 
 var (
 	pidFile     = flag.String("pidfile", "", "pid file")
-	listenAddr  = flag.String("listen", ":8080", "port number")
+	listenAddr  = flag.String("listen", ":6900", "port number")
 	serviceAddr = flag.String("to", "/var/lib/mysql/mysql.sock", "service address")
 	log         = logger.NewLogger()
 	sigChan     = make(chan os.Signal, 1)
