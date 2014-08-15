@@ -182,8 +182,7 @@ func (s *Scheduler) finish(req *Request) {
 
 func (s *Scheduler) AddBackend(addr string) {
 	log.Printf("balancer: bring up %s.\n", addr)
-	b := NewBackend()
-	b.address = addr
+	b := NewBackend(addr)
 	s.backends[addr] = b
 	heap.Push(&s.pool, b)
 }

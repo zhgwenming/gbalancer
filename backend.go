@@ -4,15 +4,24 @@
 
 package main
 
+import (
+	"github.com/docker/spdystream"
+)
+
+const (
+	streamPort = 6900
+)
+
 type Backend struct {
-	address string
-	flags   int
-	index   int
-	ongoing uint
-	RxBytes uint64
-	TxBytes uint64
+	spdyconn *spdystream.Connection
+	address  string
+	flags    int
+	index    int
+	ongoing  uint
+	RxBytes  uint64
+	TxBytes  uint64
 }
 
-func NewBackend() *Backend {
-	return &Backend{}
+func NewBackend(addr string) *Backend {
+	return &Backend{address: addr}
 }

@@ -42,6 +42,7 @@ var (
 	daemonMode   = flag.Bool("daemon", false, "daemon mode")
 	ipvsMode     = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
 	ipvsRemote   = flag.Bool("remote", false, "independent director")
+	useTunnel    = flag.Bool("tunnel", true, "use tunnel mode")
 	printVersion = flag.Bool("version", false, "print gbalancer version")
 )
 
