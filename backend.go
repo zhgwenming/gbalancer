@@ -6,10 +6,12 @@ package main
 
 import (
 	"github.com/docker/spdystream"
+	"net"
+	"time"
 )
 
 const (
-	streamPort = 6900
+	STREAMPORT = "6900"
 )
 
 type Backend struct {
@@ -23,5 +25,30 @@ type Backend struct {
 }
 
 func NewBackend(addr string) *Backend {
-	return &Backend{address: addr}
+	b := &Backend{address: addr}
+	if conn, err := NewStreamConn(addr, STREAMPORT); err == nil {
+		b.spdyconn = conn
+	}
+	return b
+}
+
+func NewStreamConn(addr, port string) (*spdystream.Connection, error) {
+	conn, err := net.DialTimeout("tcp", addr+":"+port, time.Second)
+	if err != nil {
+		log.Printf("dail spdy error: %s", err)
+		return nil, err
+	}
+
+	spdyConn, err := spdystream.NewConnection(conn, false)
+	if err != nil {
+		log.Printf("spdystream create connection error: %s", err)
+		return nil, err
+	}
+
+	go spdyConn.Serve(spdystream.NoOpStreamHandler)
+	if _, err = spdyConn.Ping(); err != nil {
+		return nil, err
+	} else {
+		return spdyConn, nil
+	}
 }
