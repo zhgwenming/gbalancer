@@ -35,6 +35,13 @@ func AgentStreamHandler(stream *spdystream.Stream) {
 		return
 	}
 
+	// drain the header requests to avoid DoS
+	go func() {
+		for {
+			stream.ReceiveHeader()
+		}
+	}()
+
 	c := make(chan *copyRet, 2)
 
 	go streamCopy(stream, conn, c)
