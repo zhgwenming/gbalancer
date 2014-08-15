@@ -21,7 +21,7 @@ import (
 var (
 	pidFile     = flag.String("pidfile", "", "pid file")
 	listenAddr  = flag.String("listen", ":8080", "port number")
-	serviceAddr = flag.String("srvaddr", "/var/lib/mysql.sock", "service address")
+	serviceAddr = flag.String("to", "/var/lib/mysql/mysql.sock", "service address")
 	log         = logger.NewLogger()
 	sigChan     = make(chan os.Signal, 1)
 	wgroup      = &sync.WaitGroup{}
@@ -33,6 +33,8 @@ func init() {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	flag.Parse()
 
 	if *pidFile != "" {
 		if err := utils.WritePid(*pidFile); err != nil {
