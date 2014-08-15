@@ -15,19 +15,20 @@ import (
 )
 
 type Scheduler struct {
-	pool     Pool
-	backends map[string]*Backend
-	done     chan *Request // to use heap to schedule
-	pending  []*Request
+	pool      Pool
+	backends  map[string]*Backend
+	done      chan *Request // to use heap to schedule
+	pending   []*Request
+	useTunnel bool
 }
 
 // it's a max heap if we do persistent scheduling
-func NewScheduler(max bool) *Scheduler {
+func NewScheduler(max, tunnel bool) *Scheduler {
 	pool := Pool{make([]*Backend, 0, MaxForwarders), max}
 	backends := make(map[string]*Backend, MaxBackends)
 	done := make(chan *Request, MaxForwarders)
 	pending := make([]*Request, 0, MaxForwarders)
-	scheduler := &Scheduler{pool, backends, done, pending}
+	scheduler := &Scheduler{pool, backends, done, pending, tunnel}
 	return scheduler
 }
 
@@ -182,7 +183,7 @@ func (s *Scheduler) finish(req *Request) {
 
 func (s *Scheduler) AddBackend(addr string) {
 	log.Printf("balancer: bring up %s.\n", addr)
-	b := NewBackend(addr)
+	b := NewBackend(addr, s.useTunnel)
 	s.backends[addr] = b
 	heap.Push(&s.pool, b)
 }

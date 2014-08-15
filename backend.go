@@ -24,10 +24,12 @@ type Backend struct {
 	TxBytes  uint64
 }
 
-func NewBackend(addr string) *Backend {
+func NewBackend(addr string, useTunnel bool) *Backend {
 	b := &Backend{address: addr}
-	if conn, err := NewStreamConn(addr, STREAMPORT); err == nil {
-		b.spdyconn = conn
+	if useTunnel {
+		if conn, err := NewStreamConn(addr, STREAMPORT); err == nil {
+			b.spdyconn = conn
+		}
 	}
 	return b
 }

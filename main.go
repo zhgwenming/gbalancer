@@ -113,7 +113,7 @@ func main() {
 		job := make(chan *Request)
 
 		// start the scheduler
-		sch := NewScheduler(*failover)
+		sch := NewScheduler(*failover, *useTunnel)
 		go sch.schedule(job, status)
 
 		listenAddrs, err := settings.GetListenAddrs()
