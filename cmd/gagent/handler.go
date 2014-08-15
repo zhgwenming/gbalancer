@@ -11,6 +11,17 @@ import (
 	"net/http"
 )
 
+type copyRet struct {
+	bytes int64
+	err   error
+}
+
+func streamCopy(dst io.WriteCloser, src io.Reader, c chan *copyRet) {
+	n, err := io.Copy(dst, src)
+	dst.Close()
+	c <- &copyRet{n, err}
+}
+
 // Tunnel Handler
 func AgentStreamHandler(stream *spdystream.Stream) {
 	conn, err := net.Dial("unix", *serviceAddr)
@@ -24,20 +35,15 @@ func AgentStreamHandler(stream *spdystream.Stream) {
 		return
 	}
 
-	go func() {
-		go io.Copy(stream, conn)
-		go io.Copy(conn, stream)
-	}()
-	go func() {
-		for {
-			header, receiveErr := stream.ReceiveHeader()
-			if receiveErr != nil {
-				return
-			}
-			sendErr := stream.SendHeader(header, false)
-			if sendErr != nil {
-				return
-			}
+	c := make(chan *copyRet, 2)
+
+	go streamCopy(stream, conn, c)
+	go streamCopy(conn, stream, c)
+
+	// wait until the copy routine ended
+	for i := 0; i < 2; i++ {
+		if r := <-c; r.err != nil {
+			log.Printf("Error: %s", r.err)
 		}
-	}()
+	}
 }
