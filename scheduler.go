@@ -11,6 +11,7 @@ import (
 	//"log"
 	"github.com/zhgwenming/gbalancer/utils"
 	"net"
+	"net/http"
 	"time"
 )
 
@@ -124,9 +125,24 @@ func sockCopy(dst io.Writer, src io.Reader, c chan *copyRet) {
 	c <- &copyRet{n, err}
 }
 
+func (s *Scheduler) NewConnection(req *Request) (net.Conn, error) {
+	var conn net.Conn
+	var err error
+
+	spdyConn := req.backend.spdyconn
+
+	if spdyConn != nil {
+		conn, err = spdyConn.CreateStream(http.Header{}, nil, false)
+	} else {
+		conn, err = net.Dial("tcp", req.backend.address)
+	}
+
+	return conn, err
+}
+
 func (s *Scheduler) run(req *Request) {
 	// do the actuall work
-	srv, err := net.Dial("tcp", req.backend.address)
+	srv, err := s.NewConnection(req)
 	if err != nil {
 		req.err = err
 		return
