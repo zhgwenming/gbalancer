@@ -119,9 +119,15 @@ type copyRet struct {
 func sockCopy(dst io.Writer, src io.Reader, c chan *copyRet) {
 	n, err := io.Copy(dst, src)
 	//log.Printf("sent %d bytes to server", n)
+
 	// make backend read stream ended
-	conn := dst.(net.Conn)
-	conn.SetReadDeadline(time.Now())
+
+	//conn := dst.(net.Conn)
+	//conn.SetReadDeadline(time.Now())
+
+	// Close the upstream connection as Deadline
+	// not yet supported by spdystream by now
+	dst.Close()
 	c <- &copyRet{n, err}
 }
 
@@ -148,7 +154,9 @@ func (s *Scheduler) run(req *Request) {
 		s.done <- req
 		return
 	}
-	defer srv.Close()
+
+	// no need to defer close the upstream server as sockCopy will do that
+	// defer srv.Close()
 
 	c := make(chan *copyRet, 2)
 	//log.Printf("splicing socks")
@@ -180,9 +188,6 @@ func (s *Scheduler) finish(req *Request) {
 			// keep it out of the heap and try to reschedule the job
 			log.Printf("%s, rescheduling request %v\n", err, req)
 			s.dispatch(req)
-		} else {
-			//log.Printf("%s, closing request %v\n", err, req)
-			req.conn.Close()
 		}
 	} else {
 		if backend.index == -1 {
@@ -194,7 +199,6 @@ func (s *Scheduler) finish(req *Request) {
 			backend.ongoing--
 			heap.Push(&s.pool, backend)
 		}
-		req.conn.Close()
 	}
 }
 
