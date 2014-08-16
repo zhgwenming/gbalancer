@@ -2,7 +2,7 @@
 // Use of this source code is governed by a GPLv3
 // Author: Wenming Zhang <zhgwenming@gmail.com>
 
-package main
+package native
 
 import (
 	"container/heap"
@@ -13,6 +13,18 @@ import (
 	"net"
 	"net/http"
 )
+
+type Request struct {
+	Conn    net.Conn
+	backend *Backend
+	err     error
+}
+
+type Forwarder struct {
+	backend *Backend
+	request *Request
+	bytes   uint
+}
 
 type Scheduler struct {
 	pool      Pool
@@ -32,7 +44,7 @@ func NewScheduler(max, tunnel bool) *Scheduler {
 	return scheduler
 }
 
-func (s *Scheduler) schedule(job chan *Request, status <-chan map[string]int) {
+func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 	for {
 		select {
 		case back := <-s.done:
@@ -94,7 +106,7 @@ func (s *Scheduler) dispatch(req *Request) {
 	b := heap.Pop(&s.pool).(*Backend)
 	if b.ongoing >= MaxForwardersPerBackend {
 		heap.Push(&s.pool, b)
-		req.conn.Close()
+		req.Conn.Close()
 		log.Printf("all backend forwarders exceed %d\n", MaxForwardersPerBackend)
 		return
 	}
@@ -164,8 +176,8 @@ func (s *Scheduler) run(req *Request) {
 
 	c := make(chan *copyRet, 2)
 	//log.Printf("splicing socks")
-	go sockCopy(req.conn, srv, c)
-	go sockCopy(srv, req.conn, c)
+	go sockCopy(req.Conn, srv, c)
+	go sockCopy(srv, req.Conn, c)
 
 	for i := 0; i < 2; i++ {
 		if r := <-c; r.err != nil {

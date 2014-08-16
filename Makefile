@@ -2,8 +2,8 @@
 
 all: gbalancer
 
-gbalancer: *.go
-	go build -o $@
+gbalancer: engine/native/*.go
+	cd cmd/gbalancer && go build -o $@
 
 rhel7: galerabalancer
 

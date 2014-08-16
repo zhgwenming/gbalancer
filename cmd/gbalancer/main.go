@@ -8,7 +8,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/zhgwenming/gbalancer/config"
-	"github.com/zhgwenming/gbalancer/engine"
+	"github.com/zhgwenming/gbalancer/engine/ipvs"
+	"github.com/zhgwenming/gbalancer/engine/native"
 	logger "github.com/zhgwenming/gbalancer/log"
 	"github.com/zhgwenming/gbalancer/utils"
 	"github.com/zhgwenming/gbalancer/wrangler"
@@ -20,17 +21,9 @@ import (
 	"syscall"
 )
 
-type Request struct {
-	conn    net.Conn
-	backend *Backend
-	err     error
-}
-
-type Forwarder struct {
-	backend *Backend
-	request *Request
-	bytes   uint
-}
+const (
+	VERSION = "0.5.3"
+)
 
 var (
 	wgroup       = &sync.WaitGroup{}
@@ -90,7 +83,7 @@ func main() {
 		}
 	}
 
-	status := make(chan map[string]int, MaxBackends)
+	status := make(chan map[string]int, native.MaxBackends)
 	//status := make(chan *BEStatus)
 
 	// start the wrangler
@@ -102,19 +95,19 @@ func main() {
 	if *ipvsMode {
 		wgroup.Add(1)
 		if *ipvsRemote {
-			ipvs := engine.NewIPvs(settings.Addr, settings.Port, "wlc", done, wgroup)
+			ipvs := ipvs.NewIPvs(settings.Addr, settings.Port, "wlc", done, wgroup)
 			go ipvs.RemoteSchedule(status)
 		} else {
 			//ipvs := NewIPvs(IPvsLocalAddr, settings.Port, "sh", done)
-			ipvs := engine.NewIPvs(IPvsLocalAddr, settings.Port, "wlc", done, wgroup)
+			ipvs := ipvs.NewIPvs(ipvs.IPvsLocalAddr, settings.Port, "wlc", done, wgroup)
 			go ipvs.LocalSchedule(status)
 		}
 	} else {
-		job := make(chan *Request)
+		job := make(chan *native.Request)
 
 		// start the scheduler
-		sch := NewScheduler(*failover, *useTunnel)
-		go sch.schedule(job, status)
+		sch := native.NewScheduler(*failover, *useTunnel)
+		go sch.Schedule(job, status)
 
 		listenAddrs, err := settings.GetListenAddrs()
 		if err != nil {
@@ -141,7 +134,7 @@ func main() {
 				for {
 					if conn, err := listener.Accept(); err == nil {
 						//log.Println("main: got a connection")
-						req := &Request{conn: conn}
+						req := &native.Request{Conn: conn}
 						job <- req
 					} else {
 						if neterr, ok := err.(net.Error); ok && neterr.Temporary() {

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a GPLv3
 // Author: Wenming Zhang <zhgwenming@gmail.com>
 
-package main
+package native
 
 const (
 	MaxBackends             uint = 128
@@ -11,10 +11,8 @@ const (
 )
 
 const (
-	VERSION             = "0.5.3"
 	ListenAddr          = "127.0.0.1"
 	ListenPort          = "3306"
-	IPvsLocalAddr       = "127.1.1.1"
 	DEFAULT_UNIX_SOCKET = "/var/lib/mysql/mysql.sock"
 )
 

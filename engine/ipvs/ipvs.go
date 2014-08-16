@@ -2,7 +2,7 @@
 // Use of this source code is governed by a GPLv3
 // Author: Wenming Zhang <zhgwenming@gmail.com>
 
-package engine
+package ipvs
 
 import (
 	"fmt"
@@ -13,6 +13,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+)
+
+const (
+	IPvsLocalAddr = "127.1.1.1"
 )
 
 type IPvs struct {
