@@ -63,7 +63,7 @@ func (w *Wrangler) ValidBackends() {
 
 	//log.Printf("backends is %v\n", backends)
 
-	// remove fail node first
+	// remove fail node from w.Backends first
 	for b := range w.Backends {
 		if _, ok := backends[b]; !ok {
 			delete(w.Backends, b)
@@ -78,6 +78,8 @@ func (w *Wrangler) ValidBackends() {
 			w.Backends[b] = backends[b]
 		}
 	}
+
+	// full set of backends needed by the ipvs engine
 	if len(backends) > 0 {
 		w.BackChan <- backends
 	}
