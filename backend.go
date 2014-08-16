@@ -27,9 +27,12 @@ type Backend struct {
 func NewBackend(addr string, useTunnel bool) *Backend {
 	b := &Backend{address: addr}
 	if useTunnel {
-		if conn, err := NewStreamConn(addr, STREAMPORT); err == nil {
-			b.spdyconn = conn
-		}
+		// asynchronous create a spdy connection
+		go func() {
+			if conn, err := NewStreamConn(addr, STREAMPORT); err == nil {
+				b.spdyconn = conn
+			}
+		}()
 	}
 	return b
 }
