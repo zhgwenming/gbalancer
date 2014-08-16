@@ -7,7 +7,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	"strings"
 )
@@ -15,15 +14,6 @@ import (
 const (
 	DEFAULT_UNIX_SOCKET = "/var/lib/mysql/mysql.sock"
 )
-
-type ListenAddr struct {
-	net   string
-	laddr string
-}
-
-func (l *ListenAddr) Listen() (net.Listener, error) {
-	return net.Listen(l.net, l.laddr)
-}
 
 func LoadConfig(configFile string) (*Configuration, error) {
 	file, err := os.Open(configFile)

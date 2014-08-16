@@ -1,4 +1,5 @@
 {
+    "service": "galera",
     "user": "monitor",
     "pass": "3FNg6IKe",
     "addr": "127.0.0.1",
