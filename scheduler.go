@@ -145,6 +145,7 @@ func (s *Scheduler) run(req *Request) {
 	srv, err := s.NewConnection(req)
 	if err != nil {
 		req.err = err
+		s.done <- req
 		return
 	}
 	defer srv.Close()
