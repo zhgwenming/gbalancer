@@ -12,7 +12,6 @@ import (
 	"github.com/zhgwenming/gbalancer/utils"
 	"net"
 	"net/http"
-	"time"
 )
 
 type Scheduler struct {
@@ -116,7 +115,7 @@ type copyRet struct {
 //	c <- &copyRet{n, err}
 //}
 
-func sockCopy(dst io.Writer, src io.Reader, c chan *copyRet) {
+func sockCopy(dst io.WriteCloser, src io.Reader, c chan *copyRet) {
 	n, err := io.Copy(dst, src)
 	//log.Printf("sent %d bytes to server", n)
 
