@@ -11,4 +11,4 @@ galerabalancer: *.go
 	go build -compiler gccgo -o $@
 
 clean:
-	rm -fv lb gbalancer galerabalancer
+	rm -fv lb cmd/gbalancer/gbalancer galerabalancer
