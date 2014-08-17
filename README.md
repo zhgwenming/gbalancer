@@ -6,12 +6,12 @@ Gbalancer is general load balancer
 
 ### native mode
 
-#### native tcp load balancing
-#### native tunnel load balancing
+#### tcp load balancing
+#### tunnel load balancing
 
 ### ipvs mode
-#### ipvs local balancing mode
-#### ipvs director balancing mode
+#### local load balancing
+#### director load balancing
 
 #### ipvs mode limitation
 1. Must run as root
