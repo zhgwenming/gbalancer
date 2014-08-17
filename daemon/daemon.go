@@ -10,12 +10,19 @@ import (
 	logger "github.com/zhgwenming/gbalancer/log"
 	"github.com/zhgwenming/gbalancer/utils"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 var (
-	pidFile = flag.String("pidfile", "", "pid file")
 	log     = logger.NewLogger()
+	pidFile = flag.String("pidfile", "", "pid file")
+	sigChan = make(chan os.Signal, 1)
 )
+
+func init() {
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+}
 
 func CreatePidfile() {
 	if *pidFile != "" {
@@ -32,4 +39,18 @@ func RemovePidfile() {
 			log.Printf("error to remove pidfile %s:", err)
 		}
 	}
+}
+
+func WaitSignal(cleanup func()) {
+	// waiting for exit signals
+	for sig := range sigChan {
+		log.Printf("captured %v, exiting..", sig)
+		// exit if we get any signal
+		// Todo - catch signal other than SIGTERM/SIGINT
+		break
+	}
+
+	cleanup()
+	RemovePidfile()
+	return
 }

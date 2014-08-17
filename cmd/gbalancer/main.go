@@ -15,10 +15,8 @@ import (
 	"github.com/zhgwenming/gbalancer/wrangler"
 	"net"
 	"os"
-	"os/signal"
 	"runtime"
 	"sync"
-	"syscall"
 )
 
 const (
@@ -28,7 +26,6 @@ const (
 var (
 	wgroup       = &sync.WaitGroup{}
 	log          = logger.NewLogger()
-	sigChan      = make(chan os.Signal, 1)
 	configFile   = flag.String("config", "gbalancer.json", "Configuration file")
 	failover     = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
 	daemonMode   = flag.Bool("daemon", false, "daemon mode")
@@ -37,10 +34,6 @@ var (
 	useTunnel    = flag.Bool("tunnel", true, "use tunnel mode")
 	printVersion = flag.Bool("version", false, "print gbalancer version")
 )
-
-func init() {
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-}
 
 func PrintVersion() {
 	fmt.Printf("gbalancer version: %s\n", VERSION)
@@ -143,14 +136,9 @@ func main() {
 		}
 	}
 
-	// waiting for exit signals
-	for sig := range sigChan {
-		log.Printf("captured %v, exiting..", sig)
+	// wait the exit signal then do cleanup
+	daemon.WaitSignal(func() {
 		close(done)
 		wgroup.Wait()
-
-		daemon.RemovePidfile()
-		return
-	}
-
+	})
 }
