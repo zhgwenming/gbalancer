@@ -7,11 +7,12 @@ package native
 import (
 	"container/heap"
 	//splice "github.com/creack/go-splice"
-	"io"
-	//"log"
 	"github.com/zhgwenming/gbalancer/utils"
+	"io"
 	"net"
 	"net/http"
+	"sync/atomic"
+	"unsafe"
 )
 
 type Request struct {
@@ -151,8 +152,12 @@ func (s *Scheduler) NewConnection(req *Request) (net.Conn, error) {
 	if spdyConn != nil {
 		conn, err = spdyConn.CreateStream(http.Header{}, nil, false)
 		if err != nil {
-			req.backend.spdyconn = nil
-			log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
+			//req.backend.spdyconn = nil
+			spdyptr := (*unsafe.Pointer)(unsafe.Pointer(&req.backend.spdyconn))
+			swapped := atomic.CompareAndSwapPointer(spdyptr, unsafe.Pointer(spdyConn), nil)
+			if swapped {
+				log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
+			}
 			conn, err = net.Dial("tcp", req.backend.address)
 		}
 	} else {
