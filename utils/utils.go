@@ -40,22 +40,39 @@ func EnsureCommands(cmds []string) error {
 }
 
 func GetFirstIPAddr() (addr string) {
-	addrs, _ := net.InterfaceAddrs()
-	for _, i := range addrs {
-		ipnet, ok := i.(*net.IPNet)
+	ifaces, _ := net.Interfaces()
 
-		if !ok {
-			log.Fatal("assertion err:", i)
+iface:
+	for _, i := range ifaces {
+		if i.Flags&net.FlagLoopback != 0 {
+			continue
 		}
 
-		ip4 := ipnet.IP.To4()
+		if addrs, err := i.Addrs(); err != nil {
+			continue
+		} else {
+			for _, ipaddr := range addrs {
+				//log.Printf("%v", ipaddr)
+				ipnet, ok := ipaddr.(*net.IPNet)
 
-		if !ip4.IsLoopback() && ip4 != nil {
-			addr = ip4.String()
-			break
+				if !ok {
+					log.Fatal("assertion err: %v\n", ipnet)
+				}
+
+				ip4 := ipnet.IP.To4()
+				if ip4 == nil {
+					continue
+				}
+				//log.Printf("%v", ip4)
+
+				if !ip4.IsLoopback() {
+					addr = ip4.String()
+					break iface
+				}
+			}
 		}
 	}
-	//log.Printf("%v", addr)
+	log.Printf("Found local ip4 %v", addr)
 	return
 }
 

@@ -7,7 +7,7 @@ package ipvs
 import (
 	"fmt"
 	logger "github.com/zhgwenming/gbalancer/log"
-	"net"
+	"github.com/zhgwenming/gbalancer/utils"
 	"os"
 	"os/exec"
 	"strconv"
@@ -77,42 +77,7 @@ func ensureCommands(cmds []string) error {
 //	return
 //}
 //
-func getIPAddr() (addr string) {
-	ifaces, _ := net.Interfaces()
 
-iface:
-	for _, i := range ifaces {
-		if i.Flags&net.FlagLoopback != 0 {
-			continue
-		}
-
-		if addrs, err := i.Addrs(); err != nil {
-			continue
-		} else {
-			for _, ipaddr := range addrs {
-				//log.Printf("%v", ipaddr)
-				ipnet, ok := ipaddr.(*net.IPNet)
-
-				if !ok {
-					log.Fatal("assertion err: %v\n", ipnet)
-				}
-
-				ip4 := ipnet.IP.To4()
-				if ip4 == nil {
-					continue
-				}
-				//log.Printf("%v", ip4)
-
-				if !ip4.IsLoopback() {
-					addr = ip4.String()
-					break iface
-				}
-			}
-		}
-	}
-	log.Printf("Found local ip4 %v", addr)
-	return
-}
 func (i *IPvs) eventLoop(status <-chan map[string]int) {
 	for {
 		select {
@@ -183,7 +148,7 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 		i.WGroup.Done()
 	}()
 
-	useAddr := getIPAddr()
+	useAddr := utils.GetFirstIPAddr()
 
 	AddLocalRoute(i.Addr, useAddr)
 
@@ -217,7 +182,7 @@ func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 		i.WGroup.Done()
 	}()
 
-	localAddr := getIPAddr()
+	localAddr := utils.GetFirstIPAddr()
 	// % iptables -t nat -A POSTROUTING -m ipvs --vaddr 192.168.100.30/32 --vport 80 -j SNAT --to-source 192.168.10.10
 	rule := "POSTROUTING -m ipvs --vaddr " + i.Addr + "/32 --vport " + i.Port + " -j SNAT --to " + localAddr
 	cmd = "iptables -t nat -A " + rule
