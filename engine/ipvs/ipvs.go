@@ -151,6 +151,23 @@ func (i *IPvs) eventLoop(status <-chan map[string]int) {
 // routing table
 //% ip route  add  table local 127.1.1.1 dev lo  proto kernel  scope host  src 172.16.154.164
 //% ip route flush cache
+func AddLocalRoute(dst, src string) {
+	cmd := "ip route add table local " + dst + " dev lo proto kernel scope host src " + src
+	runCommand(cmd)
+
+	// flush the routing cache
+	cmd = "ip route flush cache"
+	runCommand(cmd)
+
+}
+
+func DeleteLocalRoute(dst string) {
+	cmd := "ip route delete table local " + dst
+	runCommand(cmd)
+	cmd = "ip route flush cache"
+	runCommand(cmd)
+}
+
 func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 	var cmd string
 	if output, err := exec.Command("ipvsadm", "-A",
@@ -166,21 +183,12 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 		i.WGroup.Done()
 	}()
 
-	localAddr := getIPAddr()
+	useAddr := getIPAddr()
 
-	cmd = "ip route add table local " + i.Addr + " dev lo proto kernel scope host src " + localAddr
-	runCommand(cmd)
+	AddLocalRoute(i.Addr, useAddr)
 
-	// flush the routing cache
-	cmd = "ip route flush cache"
-	runCommand(cmd)
-
-	defer func() {
-		cmd = "ip route delete table local " + i.Addr
-		runCommand(cmd)
-		cmd = "ip route flush cache"
-		runCommand(cmd)
-	}()
+	// to enable multiple instances of gbalancer exist, just keep the route
+	//defer DeleteLocalRoute(i.Addr)
 
 	i.eventLoop(status)
 }
