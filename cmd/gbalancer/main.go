@@ -52,13 +52,6 @@ func main() {
 		log.Fatal("error:", err)
 	}
 
-	// for compatible reason, may remove in the future
-	if settings.Addr != "" {
-		tcpAddr := "tcp://" + settings.Addr + ":" + settings.Port
-		settings.AddListen(tcpAddr)
-	}
-
-	//log.Printf("%v", config)
 	log.Printf(settings.ListenInfo())
 	daemon.CreatePidfile()
 

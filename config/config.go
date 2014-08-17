@@ -31,6 +31,12 @@ func LoadConfig(configFile string) (*Configuration, error) {
 
 	err = decoder.Decode(config)
 
+	// for compatible reason, may remove in the future
+	if config.Addr != "" {
+		tcpAddr := "tcp://" + config.Addr + ":" + config.Port
+		config.AddListen(tcpAddr)
+	}
+
 	return config, err
 }
 
