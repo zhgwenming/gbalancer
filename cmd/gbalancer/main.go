@@ -46,15 +46,17 @@ func main() {
 		os.Chdir("/")
 	}
 
+	// Load configurations
 	settings, err := config.LoadConfig(*configFile)
 	if err != nil {
 		fmt.Printf("error: %s\n", err)
 		log.Fatal("error:", err)
 	}
-
 	log.Printf(settings.ListenInfo())
+
 	daemon.CreatePidfile()
 
+	// create the service goroutine
 	done := engine.Serve(settings, wgroup)
 
 	// wait the exit signal then do cleanup
