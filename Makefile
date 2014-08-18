@@ -9,9 +9,10 @@ SRCDIR = $(PWD)/build/src/$(PKGPREFIX)
 
 gbalancer: engine/native/*.go
 	#cd cmd/gbalancer && go build -o $@
-	[ -d $(SRCDIR) ] || mkdir -p $(SRCDIR)
-	ln -nsf $(PWD) $(SRCDIR)/
-	GOPATH=$(PWD)/build:$(PWD)/Godeps/_workspace go build  -o $@ $(PKGNAME)/cmd/gbalancer
+	@[ -d $(SRCDIR) ] || mkdir -p $(SRCDIR)
+	@ln -nsf $(PWD) $(SRCDIR)/
+	GOPATH=$(PWD)/build:$(PWD)/Godeps/_workspace 	\
+		go build  -o $@ $(PKGNAME)/cmd/gbalancer
 
 rhel7: galerabalancer
 
