@@ -2,9 +2,14 @@
 	"ImportPath": "github.com/zhgwenming/gbalancer",
 	"GoVersion": "go1.2.1",
 	"Packages": [
-		"./..."
+		"cmd/gbalancer/main.go"
 	],
 	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/go.net/spdy",
+			"Comment": "null-77",
+			"Rev": "ca4c826193c2d80398fced1524b18fc42f4b5bfc"
+		},
 		{
 			"ImportPath": "github.com/alexzorin/libvirt-go",
 			"Comment": "v2.6.0-2-g99d0178",
@@ -14,6 +19,10 @@
 			"ImportPath": "github.com/coreos/go-etcd/etcd",
 			"Comment": "v0.2.0-rc1-73-g895202b",
 			"Rev": "895202b626e0ff14fb87457c12112ed109b71b53"
+		},
+		{
+			"ImportPath": "github.com/docker/spdystream",
+			"Rev": "0e1a22f802ad9bed787cba4ad3d041932958276d"
 		},
 		{
 			"ImportPath": "github.com/go-sql-driver/mysql",
