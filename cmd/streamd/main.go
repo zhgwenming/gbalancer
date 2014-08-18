@@ -7,7 +7,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/docker/spdystream"
+	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/docker/spdystream"
 	logger "github.com/zhgwenming/gbalancer/log"
 	"github.com/zhgwenming/gbalancer/utils"
 	"net"

@@ -1,8 +1,8 @@
 {
 	"ImportPath": "github.com/zhgwenming/gbalancer",
-	"GoVersion": "go1.2.1",
+	"GoVersion": "go1.3",
 	"Packages": [
-		"cmd/gbalancer/main.go"
+		"./..."
 	],
 	"Deps": [
 		{
