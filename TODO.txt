@@ -1,0 +1,18 @@
+To support the following form of configuration:
+
+{
+    "service": "galera",
+    "user": "monitor",
+    "pass": "3FNg6IKe",
+    "addr": "127.0.0.1",
+    "port": "3307",
+    "listen": [
+	"unix:///tmp/mysql.sock"
+    ],
+    "backend": [
+        "11.100.91.72:3306",
+        "10.100.91.71:3306"
+        "tunnel://10.100.91.71:3306/tmp/mysql.sock"
+        "tunnel://10.100.91.71:3306/127.0.0.1:3306"
+    ]
+}
