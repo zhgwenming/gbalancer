@@ -32,6 +32,7 @@ func LoadConfig(configFile string) (*Configuration, error) {
 	err = decoder.Decode(config)
 
 	// for compatible reason, may remove in the future
+	// might be needed by the ipvs engine
 	if config.Addr != "" {
 		tcpAddr := "tcp://" + config.Addr + ":" + config.Port
 		config.AddListen(tcpAddr)
