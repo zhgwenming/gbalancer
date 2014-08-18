@@ -2,17 +2,19 @@
 
 all: gbalancer
 
-PKGPREFIX = github.com/zhgwenming
-PKGNAME = $(PKGPREFIX)/gbalancer
+GOPATH = $(PWD)/build
 
-SRCDIR = $(PWD)/build/src/$(PKGPREFIX)
+URL = github.com/zhgwenming
+REPO = gbalancer
+
+URLPATH = $(GOPATH)/src/$(URL)
 
 gbalancer: engine/native/*.go
 	#cd cmd/gbalancer && go build -o $@
-	@[ -d $(SRCDIR) ] || mkdir -p $(SRCDIR)
-	@ln -nsf $(PWD) $(SRCDIR)/gbalancer
-	GOPATH=$(PWD)/build:$(PWD)/Godeps/_workspace 	\
-		go build  -o $@ $(PKGNAME)/cmd/gbalancer
+	@[ -d $(URLPATH) ] || mkdir -p $(URLPATH)
+	@ln -nsf $(PWD) $(URLPATH)/$(REPO)
+	GOPATH=$(GOPATH)	\
+		go build  -o $@ $(URL)/$(REPO)/cmd/gbalancer
 
 rhel7: galerabalancer
 
