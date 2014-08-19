@@ -7,6 +7,7 @@ package native
 import (
 	"net"
 	//"strings"
+	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/docker/spdystream"
 	"time"
 )
 
