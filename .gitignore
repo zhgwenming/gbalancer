@@ -3,3 +3,4 @@ gbalancer
 galerabalancer
 *.tar.gz
 *.rpm
+build/
