@@ -16,15 +16,15 @@ type copyRet struct {
 	err   error
 }
 
-func streamCopy(dst io.WriteCloser, src io.Reader, c chan *copyRet) {
-	n, err := io.Copy(dst, src)
+func streamCopy(dst io.WriteCloser, src io.Reader) {
+	io.Copy(dst, src)
 	dst.Close()
-	c <- &copyRet{n, err}
 }
 
 // Tunnel Handler
 func AgentStreamHandler(stream *spdystream.Stream) {
 	conn, err := net.Dial("unix", *serviceAddr)
+	//conn, err := net.Dial("tcp", "10.100.91.74:3306")
 	if err != nil {
 		log.Printf("Failed: %s\n", err)
 		return
@@ -42,15 +42,7 @@ func AgentStreamHandler(stream *spdystream.Stream) {
 		}
 	}()
 
-	c := make(chan *copyRet, 2)
+	go streamCopy(stream, conn)
+	go streamCopy(conn, stream)
 
-	go streamCopy(stream, conn, c)
-	go streamCopy(conn, stream, c)
-
-	// wait until the copy routine ended
-	for i := 0; i < 2; i++ {
-		if r := <-c; r.err != nil {
-			log.Printf("Error: %s", r.err)
-		}
-	}
 }
