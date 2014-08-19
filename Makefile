@@ -14,7 +14,6 @@ gbalancer: engine/native/*.go
 	@ln -nsf $(PWD) $(URLPATH)/$(REPO)
 	GOBIN= GOPATH=$(GOPATH)	\
 		go install $(URL)/$(REPO)/cmd/gbalancer $(URL)/$(REPO)/cmd/streamd
-		#go build  -o $@ $(URL)/$(REPO)/cmd/gbalancer
 
 rhel7: galerabalancer
 
