@@ -38,7 +38,6 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 		go func() {
 			<-done
 			listener.Close()
-			wgroup.Done()
 		}()
 
 		if err != nil {
@@ -46,7 +45,8 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 		}
 
 		// tcp/unix listener
-		go func() {
+		go func(listen config.ListenAddr) {
+
 			for {
 				if conn, err := listener.Accept(); err == nil {
 					//log.Println("main: got a connection")
@@ -57,11 +57,12 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 						log.Printf("%s\n", err)
 					} else {
 						// we should got a errClosing
-						log.Printf("stop listening for %s:%s\n", listenAddr.Net, listenAddr.Addr)
+						log.Printf("stop listening for %s:%s\n", listen.Net, listen.Addr)
+						wgroup.Done()
 						return
 					}
 				}
 			}
-		}()
+		}(listenAddr)
 	}
 }
