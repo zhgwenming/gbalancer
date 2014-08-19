@@ -47,6 +47,11 @@ func NewScheduler(max, tunnel bool) *Scheduler {
 
 	spdyMonitor := make(chan *Backend, MaxBackends)
 	newBackendChan := make(chan *Backend, MaxBackends)
+
+	if tunnel {
+		go SpdyMonitor(spdyMonitor, newBackendChan)
+	}
+
 	scheduler := &Scheduler{pool, backends, done, pending, tunnel, spdyMonitor, newBackendChan}
 	return scheduler
 }
@@ -84,9 +89,16 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 
 			addrs = utils.Shuffle(addrs)
 			for _, addr := range addrs {
-				s.AddBackend(addr)
+				b := NewBackend(addr)
+				if s.useTunnel {
+					s.spdyMonitorChan <- b
+				} else {
+					s.AddBackend(b)
+				}
 			}
 
+		case backend := <-s.newBackendChan:
+			s.AddBackend(backend)
 			// drain the pending list
 			if len(s.pending) > 0 && len(s.pool.backends) > 0 {
 				for _, p := range s.pending {
@@ -237,9 +249,9 @@ func (s *Scheduler) finish(req *Request) {
 	}
 }
 
-func (s *Scheduler) AddBackend(addr string) {
+func (s *Scheduler) AddBackend(b *Backend) {
+	addr := b.address
 	log.Printf("balancer: bring up %s.\n", addr)
-	b := NewBackend(addr, s.useTunnel)
 	s.backends[addr] = b
 	heap.Push(&s.pool, b)
 }

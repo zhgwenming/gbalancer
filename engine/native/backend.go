@@ -24,16 +24,7 @@ type Backend struct {
 	TxBytes  uint64
 }
 
-func NewBackend(addr string, useTunnel bool) *Backend {
+func NewBackend(addr string) *Backend {
 	b := &Backend{address: addr, flags: FlagInit}
-	if useTunnel {
-		// asynchronous create a spdy connection
-		go func() {
-			//addrs := strings.Split(addr, ":")
-			if conn, err := NewStreamConn("127.0.0.1", STREAMPORT); err == nil {
-				b.spdyconn = conn
-			}
-		}()
-	}
 	return b
 }
