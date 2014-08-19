@@ -57,7 +57,7 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 						log.Printf("%s\n", err)
 					} else {
 						// we should got a errClosing
-						log.Printf("exiting listen loop\n")
+						log.Printf("stop listening for %s:%s\n", listenAddr.Net, listenAddr.Addr)
 						return
 					}
 				}

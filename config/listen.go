@@ -9,10 +9,10 @@ import (
 )
 
 type ListenAddr struct {
-	net   string
-	laddr string
+	Net  string
+	Addr string
 }
 
 func (l *ListenAddr) Listen() (net.Listener, error) {
-	return net.Listen(l.net, l.laddr)
+	return net.Listen(l.Net, l.Addr)
 }
