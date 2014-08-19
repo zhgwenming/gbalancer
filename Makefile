@@ -10,7 +10,6 @@ REPO = gbalancer
 URLPATH = $(GOPATH)/src/$(URL)
 
 gbalancer: engine/native/*.go
-	#cd cmd/gbalancer && go build -o $@
 	@[ -d $(URLPATH) ] || mkdir -p $(URLPATH)
 	@ln -nsf $(PWD) $(URLPATH)/$(REPO)
 	GOPATH=$(GOPATH)	\
