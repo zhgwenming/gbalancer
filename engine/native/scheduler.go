@@ -156,7 +156,15 @@ func (s *Scheduler) NewConnection(req *Request) (net.Conn, error) {
 			spdyptr := (*unsafe.Pointer)(unsafe.Pointer(&req.backend.spdyconn))
 			swapped := atomic.CompareAndSwapPointer(spdyptr, unsafe.Pointer(spdyConn), nil)
 			if swapped {
-				log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
+				if conn == nil {
+					// streamId used up
+					// TODO:
+					// create a new spdy connection
+					spdyConn.Close()
+					log.Printf("Used up streamdID, roll back to tcp mode. (%s)", err)
+				} else {
+					log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
+				}
 			}
 			conn, err = net.Dial("tcp", req.backend.address)
 		}
