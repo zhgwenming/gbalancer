@@ -6,19 +6,18 @@ package native
 
 import (
 	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/docker/spdystream"
-	"net"
-	//"strings"
-	"time"
 )
 
+type BackendFlags uint16
+
 const (
-	STREAMPORT = "6900"
+	FlagInit BackendFlags = 0x1
 )
 
 type Backend struct {
 	spdyconn *spdystream.Connection
 	address  string
-	flags    int
+	flags    BackendFlags
 	index    int
 	ongoing  uint
 	RxBytes  uint64
@@ -26,7 +25,7 @@ type Backend struct {
 }
 
 func NewBackend(addr string, useTunnel bool) *Backend {
-	b := &Backend{address: addr}
+	b := &Backend{address: addr, flags: FlagInit}
 	if useTunnel {
 		// asynchronous create a spdy connection
 		go func() {
@@ -37,25 +36,4 @@ func NewBackend(addr string, useTunnel bool) *Backend {
 		}()
 	}
 	return b
-}
-
-func NewStreamConn(addr, port string) (*spdystream.Connection, error) {
-	conn, err := net.DialTimeout("tcp", addr+":"+port, time.Second)
-	if err != nil {
-		log.Printf("dail spdy error: %s", err)
-		return nil, err
-	}
-
-	spdyConn, err := spdystream.NewConnection(conn, false)
-	if err != nil {
-		log.Printf("spdystream create connection error: %s", err)
-		return nil, err
-	}
-
-	go spdyConn.Serve(spdystream.NoOpStreamHandler)
-	if _, err = spdyConn.Ping(); err != nil {
-		return nil, err
-	} else {
-		return spdyConn, nil
-	}
 }

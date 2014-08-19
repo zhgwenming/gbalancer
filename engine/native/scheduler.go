@@ -28,20 +28,26 @@ type Forwarder struct {
 }
 
 type Scheduler struct {
-	pool      Pool
-	backends  map[string]*Backend
-	done      chan *Request // to use heap to schedule
-	pending   []*Request
-	useTunnel bool
+	pool            Pool
+	backends        map[string]*Backend
+	done            chan *Request // to use heap to schedule
+	pending         []*Request
+	useTunnel       bool
+	spdyMonitorChan chan *Backend
+	newBackendChan  chan *Backend
 }
 
 // it's a max heap if we do persistent scheduling
 func NewScheduler(max, tunnel bool) *Scheduler {
 	pool := Pool{make([]*Backend, 0, MaxForwarders), max}
 	backends := make(map[string]*Backend, MaxBackends)
+
 	done := make(chan *Request, MaxForwarders)
 	pending := make([]*Request, 0, MaxForwarders)
-	scheduler := &Scheduler{pool, backends, done, pending, tunnel}
+
+	spdyMonitor := make(chan *Backend, MaxBackends)
+	newBackendChan := make(chan *Backend, MaxBackends)
+	scheduler := &Scheduler{pool, backends, done, pending, tunnel, spdyMonitor, newBackendChan}
 	return scheduler
 }
 
