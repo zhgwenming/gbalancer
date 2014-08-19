@@ -7,7 +7,7 @@ package native
 import (
 	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/docker/spdystream"
 	"net"
-	"strings"
+	//"strings"
 	"time"
 )
 
@@ -30,8 +30,8 @@ func NewBackend(addr string, useTunnel bool) *Backend {
 	if useTunnel {
 		// asynchronous create a spdy connection
 		go func() {
-			addrs := strings.Split(addr, ":")
-			if conn, err := NewStreamConn(addrs[0], STREAMPORT); err == nil {
+			//addrs := strings.Split(addr, ":")
+			if conn, err := NewStreamConn("127.0.0.1", STREAMPORT); err == nil {
 				b.spdyconn = conn
 			}
 		}()
