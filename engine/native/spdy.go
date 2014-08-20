@@ -25,6 +25,8 @@ type spdyConn struct {
 
 func (spdy *spdyConn) CreateStream(headers http.Header, parent *spdystream.Stream, fin bool) (*spdystream.Stream, error) {
 	conn, err := spdy.conn.CreateStream(http.Header{}, nil, false)
+
+	// error to create a new stream
 	if err != nil {
 		//req.backend.spdyconn = nil
 		tcpconn := spdy.conn
@@ -41,6 +43,8 @@ func (spdy *spdyConn) CreateStream(headers http.Header, parent *spdystream.Strea
 				log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
 			}
 		}
+	} else {
+		// TODO: spdy conn pre-creation
 	}
 	return conn, err
 }
