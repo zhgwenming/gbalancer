@@ -1,9 +1,9 @@
 package spdystream
 
 import (
-	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/code.google.com/p/go.net/spdy"
 	"errors"
 	"fmt"
+	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/code.google.com/p/go.net/spdy"
 	"io"
 	"net"
 	"net/http"
@@ -728,6 +728,12 @@ func (s *Connection) sendStream(stream *Stream, fin bool) error {
 	s.writeLock.Lock()
 	defer s.writeLock.Unlock()
 	return s.framer.WriteFrame(streamFrame)
+}
+
+// PeekNextStreamId returns the next sequential id and keeps the next id untouched
+func (s *Connection) PeekNextStreamId() spdy.StreamId {
+	sid := s.nextStreamId
+	return sid
 }
 
 // getNextStreamId returns the next sequential id
