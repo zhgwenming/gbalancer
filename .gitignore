@@ -3,4 +3,5 @@ gbalancer
 galerabalancer
 *.tar.gz
 *.rpm
+.*.swp
 build/
