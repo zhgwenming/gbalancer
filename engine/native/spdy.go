@@ -8,7 +8,10 @@ import (
 	"net"
 	//"strings"
 	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/docker/spdystream"
+	"net/http"
+	"sync/atomic"
 	"time"
+	"unsafe"
 )
 
 const (
@@ -18,6 +21,28 @@ const (
 type spdyConn struct {
 	conn    *spdystream.Connection
 	tcpAddr *net.TCPAddr
+}
+
+func (spdy *spdyConn) CreateStream(headers http.Header, parent *spdystream.Stream, fin bool) (*spdystream.Stream, error) {
+	conn, err := spdy.conn.CreateStream(http.Header{}, nil, false)
+	if err != nil {
+		//req.backend.spdyconn = nil
+		tcpconn := spdy.conn
+		spdyptr := (*unsafe.Pointer)(unsafe.Pointer(&spdy.conn))
+		swapped := atomic.CompareAndSwapPointer(spdyptr, unsafe.Pointer(tcpconn), nil)
+		if swapped {
+			if conn == nil {
+				// streamId used up
+				// TODO:
+				// create a new spdy connection
+				spdy.conn.Close()
+				log.Printf("Used up streamdID, roll back to tcp mode. (%s)", err)
+			} else {
+				log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
+			}
+		}
+	}
+	return conn, err
 }
 
 func NewSpdyConn(conn net.Conn) *spdyConn {
@@ -68,7 +93,7 @@ func SpdyMonitor(backChan <-chan *Backend, ready chan<- *Backend) {
 		//addrs := strings.Split(backend.address, ":")
 		if conn, err := NewStreamConn("127.0.0.1", STREAMPORT); err == nil {
 			if spdyconn := backend.spdyconn; spdyconn != nil {
-				spdyconn.Close()
+				spdyconn.conn.Close()
 			}
 
 			backend.spdyconn = conn

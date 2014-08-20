@@ -4,9 +4,7 @@
 
 package native
 
-import (
-	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/docker/spdystream"
-)
+import ()
 
 type BackendFlags uint16
 
@@ -15,7 +13,7 @@ const (
 )
 
 type Backend struct {
-	spdyconn *spdystream.Connection
+	spdyconn *spdyConn
 	address  string
 	flags    BackendFlags
 	index    int

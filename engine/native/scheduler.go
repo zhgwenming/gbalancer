@@ -11,8 +11,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"sync/atomic"
-	"unsafe"
 )
 
 type Request struct {
@@ -170,20 +168,6 @@ func (s *Scheduler) NewConnection(req *Request) (net.Conn, error) {
 	if spdyConn != nil {
 		conn, err = spdyConn.CreateStream(http.Header{}, nil, false)
 		if err != nil {
-			//req.backend.spdyconn = nil
-			spdyptr := (*unsafe.Pointer)(unsafe.Pointer(&req.backend.spdyconn))
-			swapped := atomic.CompareAndSwapPointer(spdyptr, unsafe.Pointer(spdyConn), nil)
-			if swapped {
-				if conn == nil {
-					// streamId used up
-					// TODO:
-					// create a new spdy connection
-					spdyConn.Close()
-					log.Printf("Used up streamdID, roll back to tcp mode. (%s)", err)
-				} else {
-					log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
-				}
-			}
 			conn, err = net.Dial("tcp", req.backend.address)
 		}
 	} else {
