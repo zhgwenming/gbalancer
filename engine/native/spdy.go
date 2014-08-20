@@ -17,28 +17,48 @@ const (
 
 type spdyConn struct {
 	conn    *spdystream.Connection
-	TCPAddr *net.TCPAddr
+	tcpAddr *net.TCPAddr
 }
 
-func NewStreamConn(addr, port string) (*spdystream.Connection, error) {
+func NewSpdyConn(conn net.Conn) *spdyConn {
+	var spdyconn *spdyConn
+
+	if conn == nil {
+		return nil
+	}
+
+	addr := conn.LocalAddr()
+
+	if tcpaddr, ok := addr.(*net.TCPAddr); !ok {
+		return nil
+	} else {
+		spdy, err := spdystream.NewConnection(conn, false)
+		if err != nil {
+			log.Printf("spdystream create connection error: %s", err)
+			return nil
+		}
+
+		go spdy.Serve(spdystream.NoOpStreamHandler)
+		if _, err = spdy.Ping(); err != nil {
+			return nil
+		}
+
+		spdyconn = &spdyConn{conn: spdy, tcpAddr: tcpaddr}
+	}
+
+	return spdyconn
+}
+
+func NewStreamConn(addr, port string) (*spdyConn, error) {
 	conn, err := net.DialTimeout("tcp", addr+":"+port, time.Second)
 	if err != nil {
 		log.Printf("dail spdy error: %s", err)
 		return nil, err
 	}
 
-	spdyConn, err := spdystream.NewConnection(conn, false)
-	if err != nil {
-		log.Printf("spdystream create connection error: %s", err)
-		return nil, err
-	}
+	spdyConn := NewSpdyConn(conn)
 
-	go spdyConn.Serve(spdystream.NoOpStreamHandler)
-	if _, err = spdyConn.Ping(); err != nil {
-		return nil, err
-	} else {
-		return spdyConn, nil
-	}
+	return spdyConn, nil
 }
 
 func SpdyMonitor(backChan <-chan *Backend, ready chan<- *Backend) {
