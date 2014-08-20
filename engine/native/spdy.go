@@ -15,6 +15,11 @@ const (
 	STREAMPORT = "6900"
 )
 
+type spdyConn struct {
+	conn    *spdystream.Connection
+	TCPAddr *net.TCPAddr
+}
+
 func NewStreamConn(addr, port string) (*spdystream.Connection, error) {
 	conn, err := net.DialTimeout("tcp", addr+":"+port, time.Second)
 	if err != nil {
