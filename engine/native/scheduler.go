@@ -43,14 +43,14 @@ func NewScheduler(max, tunnel bool) *Scheduler {
 	done := make(chan *Request, MaxForwarders)
 	pending := make([]*Request, 0, MaxForwarders)
 
-	spdyMonitor := make(chan *Backend, MaxBackends)
+	spdySession := make(chan *Backend, MaxBackends)
 	newBackendChan := make(chan *Backend, MaxBackends)
 
 	if tunnel {
-		go SpdyMonitor(spdyMonitor, newBackendChan)
+		go SpdySessionManager(spdySession, newBackendChan)
 	}
 
-	scheduler := &Scheduler{pool, backends, done, pending, tunnel, spdyMonitor, newBackendChan}
+	scheduler := &Scheduler{pool, backends, done, pending, tunnel, spdySession, newBackendChan}
 	return scheduler
 }
 

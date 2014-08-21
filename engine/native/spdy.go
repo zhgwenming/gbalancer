@@ -23,6 +23,11 @@ type spdyConn struct {
 	tcpAddr *net.TCPAddr
 }
 
+type spdySession struct {
+	spdy    *spdyConn
+	backedn *Backend
+}
+
 func (spdy *spdyConn) CreateStream(headers http.Header, parent *spdystream.Stream, fin bool) (*spdystream.Stream, error) {
 	conn, err := spdy.conn.CreateStream(http.Header{}, nil, false)
 
@@ -90,7 +95,7 @@ func NewStreamConn(addr, port string) (*spdyConn, error) {
 	return spdyConn, nil
 }
 
-func SpdyMonitor(backChan <-chan *Backend, ready chan<- *Backend) {
+func SpdySessionManager(backChan <-chan *Backend, ready chan<- *Backend) {
 	for backend := range backChan {
 
 		log.Printf("Creating new session for: %s", backend.address)
