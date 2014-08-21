@@ -31,8 +31,8 @@ type Scheduler struct {
 	done            chan *Request // to use heap to schedule
 	pending         []*Request
 	useTunnel       bool
-	spdyMonitorChan chan *Backend
-	newBackendChan  chan *Backend
+	spdyMonitorChan chan *spdySession
+	newSessionChan  chan *spdySession
 }
 
 // it's a max heap if we do persistent scheduling
@@ -43,14 +43,14 @@ func NewScheduler(max, tunnel bool) *Scheduler {
 	done := make(chan *Request, MaxForwarders)
 	pending := make([]*Request, 0, MaxForwarders)
 
-	spdySession := make(chan *Backend, MaxBackends)
-	newBackendChan := make(chan *Backend, MaxBackends)
+	requestSession := make(chan *spdySession, MaxBackends)
+	readySession := make(chan *spdySession, MaxBackends)
 
 	if tunnel {
-		go SpdySessionManager(spdySession, newBackendChan)
+		go SpdySessionManager(requestSession, readySession)
 	}
 
-	scheduler := &Scheduler{pool, backends, done, pending, tunnel, spdySession, newBackendChan}
+	scheduler := &Scheduler{pool, backends, done, pending, tunnel, requestSession, readySession}
 	return scheduler
 }
 
@@ -89,14 +89,14 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			for _, addr := range addrs {
 				b := NewBackend(addr)
 				if s.useTunnel {
-					s.spdyMonitorChan <- b
+					s.spdyMonitorChan <- NewSpdySession(b)
 				} else {
 					s.AddBackend(b)
 				}
 			}
 
-		case backend := <-s.newBackendChan:
-			s.AddBackend(backend)
+		case session := <-s.newSessionChan:
+			s.AddBackend(session.backend)
 			// drain the pending list
 			if len(s.pending) > 0 && len(s.pool.backends) > 0 {
 				for _, p := range s.pending {
