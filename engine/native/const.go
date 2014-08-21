@@ -8,7 +8,7 @@ const (
 	MaxBackends             uint   = 128
 	MaxForwarders           uint   = 8192
 	MaxForwardersPerBackend uint   = 4096
-	MaxStreamId             uint32 = 0x7fffffff - (0x1 << 20)
+	ThreshStreamId          uint32 = 0x7fffffff - (0x1 << 20)
 )
 
 const (

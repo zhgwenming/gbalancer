@@ -79,13 +79,15 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 				}
 			}
 
+			// the NEW active backends
+			// 1. shuffle them first
 			var addrs []string
-			// the rest of active backends, add them
 			for addr := range backends {
 				addrs = append(addrs, addr)
 			}
-
 			addrs = utils.Shuffle(addrs)
+
+			// 2. add them to scheduler
 			for _, addr := range addrs {
 				b := NewBackend(addr)
 				if s.useTunnel {
@@ -98,6 +100,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 		case session := <-s.newSessionChan:
 			b := session.backend
 			if _, ok := s.backends[b.address]; !ok {
+				// a new backend, add it to the hash
 				s.AddBackend(b)
 				// drain the pending list
 				if len(s.pending) > 0 && len(s.pool.backends) > 0 {
@@ -107,6 +110,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 					s.pending = s.pending[0:0]
 				}
 			} else {
+				// this is active backend, just switch the spdy connection
 				b.SwitchSpdyConn(session.spdy)
 			}
 		case j := <-job:
@@ -136,6 +140,10 @@ func (s *Scheduler) dispatch(req *Request) {
 	b.ongoing++
 	heap.Push(&s.pool, b)
 	req.backend = b
+	// check to see if the spdyConn needed to be switched
+	if uint32(b.spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
+		s.spdyMonitorChan <- NewSpdySession(b)
+	}
 	go s.run(req)
 }
 
