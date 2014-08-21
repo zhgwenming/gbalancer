@@ -26,3 +26,10 @@ func NewBackend(addr string) *Backend {
 	b := &Backend{address: addr, flags: FlagInit}
 	return b
 }
+
+func (b *Backend) SwitchSpdyConn(to *spdyConn) {
+	from := b.spdyconn
+	from.conn.Close()
+	b.spdyconn = to
+
+}

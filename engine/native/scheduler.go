@@ -96,13 +96,18 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			}
 
 		case session := <-s.newSessionChan:
-			s.AddBackend(session.backend)
-			// drain the pending list
-			if len(s.pending) > 0 && len(s.pool.backends) > 0 {
-				for _, p := range s.pending {
-					s.dispatch(p)
+			b := session.backend
+			if _, ok := s.backends[b.address]; !ok {
+				s.AddBackend(b)
+				// drain the pending list
+				if len(s.pending) > 0 && len(s.pool.backends) > 0 {
+					for _, p := range s.pending {
+						s.dispatch(p)
+					}
+					s.pending = s.pending[0:0]
 				}
-				s.pending = s.pending[0:0]
+			} else {
+				b.SwitchSpdyConn(session.spdy)
 			}
 		case j := <-job:
 			// add to pending list
