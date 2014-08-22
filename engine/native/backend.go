@@ -4,7 +4,10 @@
 
 package native
 
-import ()
+import (
+	"net"
+	"net/http"
+)
 
 type BackendFlags uint16
 
@@ -13,11 +16,12 @@ const (
 )
 
 type Backend struct {
-	spdyconn *spdyConn
+	spdyconn []*spdyConn
 	address  string
 	tunnels  int
 	flags    BackendFlags
 	index    int
+	count    uint64
 	ongoing  uint
 	RxBytes  uint64
 	TxBytes  uint64
@@ -28,9 +32,45 @@ func NewBackend(addr string, tunnels int) *Backend {
 	return b
 }
 
-func (b *Backend) SwitchSpdyConn(to *spdyConn) {
-	from := b.spdyconn
+func (b *Backend) SwitchSpdyConn(index int, to *spdyConn) {
+	from := b.spdyconn[index]
 	from.conn.Close()
-	b.spdyconn = to
+	b.spdyconn[index] = to
+}
+
+func (b *Backend) SpdyCheck(spdyChan chan<- *spdySession) {
+	if b.tunnels > 0 {
+		b.count++
+
+		index := int(b.count) / b.tunnels
+		spdyconn := b.spdyconn[index]
+
+		if !spdyconn.switching {
+			spdyconn.switching = true
+			// check to see if the spdyConn needed to be switched
+			if uint32(spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
+				spdyChan <- NewSpdySession(b, index)
+			}
+		}
+	}
+}
+
+func (b *Backend) NewConnection(req *Request) (net.Conn, error) {
+	var conn net.Conn
+	var err error
+
+	index := int(b.count) / b.tunnels
+	spdyconn := b.spdyconn[index]
+
+	if spdyconn != nil {
+		conn, err = spdyconn.CreateStream(http.Header{}, nil, false)
+		if err != nil {
+			conn, err = net.Dial("tcp", req.backend.address)
+		}
+	} else {
+		conn, err = net.Dial("tcp", req.backend.address)
+	}
+
+	return conn, err
 
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/zhgwenming/gbalancer/utils"
 	"io"
 	"net"
-	"net/http"
 )
 
 type Request struct {
@@ -91,7 +90,9 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			for _, addr := range addrs {
 				b := NewBackend(addr, s.tunnels)
 				if s.tunnels > 0 {
-					s.spdyMonitorChan <- NewSpdySession(b)
+					for i := 0; i < s.tunnels; i++ {
+						s.spdyMonitorChan <- NewSpdySession(b, i)
+					}
 				} else {
 					s.AddBackend(b)
 				}
@@ -111,7 +112,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 				}
 			} else {
 				// this is active backend, just switch the spdy connection
-				b.SwitchSpdyConn(session.spdy)
+				b.SwitchSpdyConn(session.index, session.spdy)
 			}
 		case j := <-job:
 			// add to pending list
@@ -138,15 +139,10 @@ func (s *Scheduler) dispatch(req *Request) {
 	}
 
 	b.ongoing++
+
 	heap.Push(&s.pool, b)
+	b.SpdyCheck(s.spdyMonitorChan)
 	req.backend = b
-	if !b.spdyconn.switching {
-		b.spdyconn.switching = true
-		// check to see if the spdyConn needed to be switched
-		if uint32(b.spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
-			s.spdyMonitorChan <- NewSpdySession(b)
-		}
-	}
 	go s.run(req)
 }
 
@@ -175,27 +171,9 @@ func sockCopy(dst io.WriteCloser, src io.Reader, c chan *copyRet) {
 	c <- &copyRet{n, err}
 }
 
-func (s *Scheduler) NewConnection(req *Request) (net.Conn, error) {
-	var conn net.Conn
-	var err error
-
-	spdyConn := req.backend.spdyconn
-
-	if spdyConn != nil {
-		conn, err = spdyConn.CreateStream(http.Header{}, nil, false)
-		if err != nil {
-			conn, err = net.Dial("tcp", req.backend.address)
-		}
-	} else {
-		conn, err = net.Dial("tcp", req.backend.address)
-	}
-
-	return conn, err
-}
-
 func (s *Scheduler) run(req *Request) {
 	// do the actuall work
-	srv, err := s.NewConnection(req)
+	srv, err := req.backend.NewConnection(req)
 	if err != nil {
 		req.err = err
 		s.done <- req

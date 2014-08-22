@@ -25,13 +25,13 @@ type spdyConn struct {
 }
 
 type spdySession struct {
-	spdy    *spdyConn
 	backend *Backend
-	index   uint
+	spdy    *spdyConn
+	index   int
 }
 
-func NewSpdySession(backend *Backend) *spdySession {
-	return &spdySession{backend: backend}
+func NewSpdySession(backend *Backend, index int) *spdySession {
+	return &spdySession{backend: backend, index: index}
 }
 
 func (spdy *spdyConn) CreateStream(headers http.Header, parent *spdystream.Stream, fin bool) (*spdystream.Stream, error) {
@@ -107,7 +107,7 @@ func SpdySessionManager(request <-chan *spdySession, ready chan<- *spdySession) 
 		log.Printf("Creating new session for: %s", session.backend.address)
 		//addrs := strings.Split(backend.address, ":")
 		if conn, err := NewStreamConn("127.0.0.1", STREAMPORT); err == nil {
-			session.backend.spdyconn = conn
+			session.spdy = conn
 		}
 
 		ready <- session
