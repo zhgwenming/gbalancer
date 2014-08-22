@@ -14,7 +14,7 @@ import (
 
 var (
 	log       = logger.NewLogger()
-	useTunnel = flag.Bool("tunnel", true, "use tunnel mode")
+	tunnels = flag.Int("tunnels", 0, "number of tunnels per server")
 	failover  = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
 )
 
@@ -22,7 +22,7 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 	job := make(chan *Request)
 
 	// start the scheduler
-	sch := NewScheduler(*failover, *useTunnel)
+	sch := NewScheduler(*failover, *tunnels)
 	go sch.Schedule(job, status)
 
 	listenAddrs, err := settings.GetListenAddrs()
