@@ -63,7 +63,8 @@ func (b *Backend) SpdyCheck(spdyChan chan<- *spdySession) {
 	}
 }
 
-func (b *Backend) NewConnection(req *Request) (net.Conn, error) {
+// Runs inside of Forwarder goroutine
+func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 	var conn net.Conn
 	var err error
 

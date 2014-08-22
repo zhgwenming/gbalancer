@@ -173,7 +173,7 @@ func sockCopy(dst io.WriteCloser, src io.Reader, c chan *copyRet) {
 
 func (s *Scheduler) run(req *Request) {
 	// do the actuall work
-	srv, err := req.backend.NewConnection(req)
+	srv, err := req.backend.ForwarderNewConnection(req)
 	if err != nil {
 		req.err = err
 		s.done <- req
