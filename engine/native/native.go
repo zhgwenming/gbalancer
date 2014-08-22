@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	log       = logger.NewLogger()
-	tunnels = flag.Int("tunnels", 0, "number of tunnels per server")
-	failover  = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
+	log      = logger.NewLogger()
+	tunnels  = flag.Int("tunnels", 0, "number of tunnels per server")
+	failover = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
 )
 
 func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan struct{}, status chan map[string]int) {

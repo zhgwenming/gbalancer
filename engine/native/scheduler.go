@@ -30,7 +30,7 @@ type Scheduler struct {
 	backends        map[string]*Backend
 	done            chan *Request // to use heap to schedule
 	pending         []*Request
-	tunnels       int
+	tunnels         int
 	spdyMonitorChan chan *spdySession
 	newSessionChan  chan *spdySession
 }
@@ -89,7 +89,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 
 			// 2. add them to scheduler
 			for _, addr := range addrs {
-				b := NewBackend(addr)
+				b := NewBackend(addr, s.tunnels)
 				if s.tunnels > 0 {
 					s.spdyMonitorChan <- NewSpdySession(b)
 				} else {

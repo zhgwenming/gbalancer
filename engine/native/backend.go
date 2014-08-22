@@ -15,6 +15,7 @@ const (
 type Backend struct {
 	spdyconn *spdyConn
 	address  string
+	tunnels  int
 	flags    BackendFlags
 	index    int
 	ongoing  uint
@@ -22,8 +23,8 @@ type Backend struct {
 	TxBytes  uint64
 }
 
-func NewBackend(addr string) *Backend {
-	b := &Backend{address: addr, flags: FlagInit}
+func NewBackend(addr string, tunnels int) *Backend {
+	b := &Backend{address: addr, tunnels: tunnels, flags: FlagInit}
 	return b
 }
 
