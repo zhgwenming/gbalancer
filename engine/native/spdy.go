@@ -19,13 +19,15 @@ const (
 )
 
 type spdyConn struct {
-	conn    *spdystream.Connection
-	tcpAddr *net.TCPAddr
+	conn      *spdystream.Connection
+	tcpAddr   *net.TCPAddr
+	switching bool
 }
 
 type spdySession struct {
 	spdy    *spdyConn
 	backend *Backend
+	index   uint
 }
 
 func NewSpdySession(backend *Backend) *spdySession {
@@ -81,7 +83,7 @@ func NewSpdyConn(conn net.Conn) *spdyConn {
 			return nil
 		}
 
-		spdyconn = &spdyConn{conn: spdy, tcpAddr: tcpaddr}
+		spdyconn = &spdyConn{conn: spdy, tcpAddr: tcpaddr, switching: false}
 	}
 
 	return spdyconn
