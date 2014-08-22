@@ -28,7 +28,15 @@ type Backend struct {
 }
 
 func NewBackend(addr string, tunnels int) *Backend {
-	b := &Backend{address: addr, tunnels: tunnels, flags: FlagInit}
+	conn := make([]*spdyConn, 16)
+
+	b := &Backend{
+		spdyconn: conn,
+		address:  addr,
+		tunnels:  tunnels,
+		flags:    FlagInit,
+	}
+
 	return b
 }
 
