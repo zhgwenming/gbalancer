@@ -140,9 +140,12 @@ func (s *Scheduler) dispatch(req *Request) {
 	b.ongoing++
 	heap.Push(&s.pool, b)
 	req.backend = b
-	// check to see if the spdyConn needed to be switched
-	if uint32(b.spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
-		s.spdyMonitorChan <- NewSpdySession(b)
+	if !b.spdyconn.switching {
+		b.spdyconn.switching = true
+		// check to see if the spdyConn needed to be switched
+		if uint32(b.spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
+			s.spdyMonitorChan <- NewSpdySession(b)
+		}
 	}
 	go s.run(req)
 }
