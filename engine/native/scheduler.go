@@ -103,6 +103,9 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			}
 		case session := <-s.newTunnelChan:
 			b := session.backend
+			// switch the spdy connection first
+			b.SwitchSpdyConn(session.connindex, session.spdy)
+
 			if _, ok := s.backends[b.address]; !ok {
 				// a new backend, add it to the hash
 				s.AddBackend(b)
@@ -113,9 +116,6 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 					}
 					s.pending = s.pending[0:0]
 				}
-			} else {
-				// this is active backend, just switch the spdy connection
-				b.SwitchSpdyConn(session.connindex, session.spdy)
 			}
 		case j := <-job:
 			// add to pending list
