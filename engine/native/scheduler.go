@@ -30,7 +30,7 @@ type Scheduler struct {
 	done          chan *Request // to use heap to schedule
 	pending       []*Request
 	tunnels       int
-	newTunnelChan chan *spdySession
+	newTunnelChan chan *spdySession // new spdy session created
 }
 
 // it's a max heap if we do persistent scheduling

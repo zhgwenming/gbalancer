@@ -17,7 +17,6 @@ const (
 
 type spdyConn struct {
 	conn      *spdystream.Connection
-	tcpAddr   *net.TCPAddr
 	switching bool
 }
 
@@ -38,24 +37,18 @@ func NewSpdyConn(conn net.Conn) *spdyConn {
 		return nil
 	}
 
-	addr := conn.LocalAddr()
-
-	if tcpaddr, ok := addr.(*net.TCPAddr); !ok {
+	spdy, err := spdystream.NewConnection(conn, false)
+	if err != nil {
+		log.Printf("spdystream create connection error: %s", err)
 		return nil
-	} else {
-		spdy, err := spdystream.NewConnection(conn, false)
-		if err != nil {
-			log.Printf("spdystream create connection error: %s", err)
-			return nil
-		}
-
-		go spdy.Serve(spdystream.NoOpStreamHandler)
-		if _, err = spdy.Ping(); err != nil {
-			return nil
-		}
-
-		spdyconn = &spdyConn{conn: spdy, tcpAddr: tcpaddr, switching: false}
 	}
+
+	go spdy.Serve(spdystream.NoOpStreamHandler)
+	if _, err = spdy.Ping(); err != nil {
+		return nil
+	}
+
+	spdyconn = &spdyConn{conn: spdy, switching: false}
 
 	return spdyconn
 }
