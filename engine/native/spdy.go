@@ -8,10 +8,7 @@ import (
 	"net"
 	//"strings"
 	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/docker/spdystream"
-	"net/http"
-	"sync/atomic"
 	"time"
-	"unsafe"
 )
 
 const (
@@ -32,32 +29,6 @@ type spdySession struct {
 
 func NewSpdySession(backend *Backend, index int) *spdySession {
 	return &spdySession{backend: backend, index: index}
-}
-
-func (spdy *spdyConn) CreateStream(headers http.Header, parent *spdystream.Stream, fin bool) (*spdystream.Stream, error) {
-	conn, err := spdy.conn.CreateStream(http.Header{}, nil, false)
-
-	// error to create a new stream
-	if err != nil {
-		//req.backend.spdyconn = nil
-		tcpconn := spdy.conn
-		spdyptr := (*unsafe.Pointer)(unsafe.Pointer(&spdy.conn))
-		swapped := atomic.CompareAndSwapPointer(spdyptr, unsafe.Pointer(tcpconn), nil)
-		if swapped {
-			if conn == nil {
-				// streamId used up
-				// TODO:
-				// create a new spdy connection
-				spdy.conn.Close()
-				log.Printf("Used up streamdID, roll back to tcp mode. (%s)", err)
-			} else {
-				log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
-			}
-		}
-	} else {
-		// TODO: spdy conn pre-creation
-	}
-	return conn, err
 }
 
 func NewSpdyConn(conn net.Conn) *spdyConn {

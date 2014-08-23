@@ -7,6 +7,8 @@ package native
 import (
 	"net"
 	"net/http"
+	"sync/atomic"
+	"unsafe"
 )
 
 type BackendFlags uint16
@@ -68,15 +70,38 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 	var conn net.Conn
 	var err error
 
-	index := int(b.count) / b.tunnels
-	spdyconn := b.spdyconn[index]
+	cnt := int(b.count)
 
-	if spdyconn != nil {
-		conn, err = spdyconn.CreateStream(http.Header{}, nil, false)
-		if err != nil {
-			conn, err = net.Dial("tcp", req.backend.address)
+	for i := 0; i < b.tunnels; i++ {
+
+		index := (cnt + i) / b.tunnels
+		spdyconn := b.spdyconn[index]
+
+		if spdyconn != nil {
+			conn, err = spdyconn.conn.CreateStream(http.Header{}, nil, false)
+			if err != nil {
+				spdyptr := (*unsafe.Pointer)(unsafe.Pointer(&b.spdyconn[index]))
+
+				swapped := atomic.CompareAndSwapPointer(spdyptr, unsafe.Pointer(spdyconn), nil)
+				if swapped {
+					if conn == nil {
+						// streamId used up
+						log.Printf("Used up streamdID. (%s)", err)
+					} else {
+						log.Printf("Failed to create stream. (%s)", err)
+					}
+
+					// try to close exist session
+					spdyconn.conn.Close()
+				}
+			} else {
+				break
+			}
 		}
-	} else {
+	}
+
+	if err != nil {
+		log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
 		conn, err = net.Dial("tcp", req.backend.address)
 	}
 
