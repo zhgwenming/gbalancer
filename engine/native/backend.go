@@ -18,15 +18,16 @@ const (
 )
 
 type Backend struct {
-	spdyconn []*spdyConn
-	address  string
-	tunnels  int
-	flags    BackendFlags
-	index    int
-	count    uint64
-	ongoing  uint
-	RxBytes  uint64
-	TxBytes  uint64
+	spdyconn   []*spdyConn
+	address    string
+	index      int // heap related fields
+	ongoing    uint
+	flags      BackendFlags
+	tunnelChan *chan *spdySession // tunnel related fields
+	tunnels    int
+	count      uint64
+	RxBytes    uint64
+	TxBytes    uint64
 }
 
 func NewBackend(addr string, tunnels int) *Backend {
