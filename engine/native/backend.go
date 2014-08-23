@@ -50,7 +50,7 @@ func (b *Backend) SwitchSpdyConn(index int, to *spdyConn) {
 }
 
 // Create new tunnel session if necessary
-func (b *Backend) SpdyCheck(backChan chan<- *spdySession) {
+func (b *Backend) SpdyCheck() {
 	if b.tunnels > 0 {
 		b.count++
 
@@ -63,12 +63,9 @@ func (b *Backend) SpdyCheck(backChan chan<- *spdySession) {
 				spdyconn.switching = true
 				// check to see if the spdyConn needed to be switched
 				if uint32(spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
-					go CreateSpdySession(NewSpdySession(b, index), backChan)
+					go CreateSpdySession(NewSpdySession(b, index), *b.tunnelChan)
 				}
 			}
-		} else {
-			log.Printf("create new session for %s", b.address)
-			go CreateSpdySession(NewSpdySession(b, index), backChan)
 		}
 	}
 }
@@ -102,6 +99,8 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 
 					// try to close exist session
 					spdyconn.conn.Close()
+					log.Printf("create new session for %s", b.address)
+					go CreateSpdySession(NewSpdySession(b, index), *b.tunnelChan)
 				}
 			} else {
 				break

@@ -136,7 +136,7 @@ func (s *Scheduler) dispatch(req *Request) {
 	b.ongoing++
 
 	heap.Push(&s.pool, b)
-	b.SpdyCheck(s.newTunnelChan)
+	b.SpdyCheck()
 	req.backend = b
 	go s.run(req)
 }
