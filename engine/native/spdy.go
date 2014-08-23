@@ -72,15 +72,14 @@ func NewStreamConn(addr, port string) (*spdyConn, error) {
 	return spdyConn, nil
 }
 
-func SpdySessionManager(request <-chan *spdySession, ready chan<- *spdySession) {
-	for session := range request {
-
-		log.Printf("Creating new session for: %s", session.backend.address)
+func CreateSpdySession(request *spdySession, ready chan<- *spdySession) {
+	for {
 		//addrs := strings.Split(backend.address, ":")
 		if conn, err := NewStreamConn("127.0.0.1", STREAMPORT); err == nil {
-			session.spdy = conn
+			request.spdy = conn
+			log.Printf("Created new session for: %s", request.backend.address)
+			break
 		}
-
-		ready <- session
 	}
+	ready <- request
 }

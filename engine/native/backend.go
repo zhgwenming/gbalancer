@@ -48,7 +48,7 @@ func (b *Backend) SwitchSpdyConn(index int, to *spdyConn) {
 	b.spdyconn[index] = to
 }
 
-func (b *Backend) SpdyCheck(spdyChan chan<- *spdySession) {
+func (b *Backend) SpdyCheck(backChan chan<- *spdySession) {
 	if b.tunnels > 0 {
 		b.count++
 
@@ -59,7 +59,7 @@ func (b *Backend) SpdyCheck(spdyChan chan<- *spdySession) {
 			spdyconn.switching = true
 			// check to see if the spdyConn needed to be switched
 			if uint32(spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
-				spdyChan <- NewSpdySession(b, index)
+				go CreateSpdySession(NewSpdySession(b, index), backChan)
 			}
 		}
 	}
