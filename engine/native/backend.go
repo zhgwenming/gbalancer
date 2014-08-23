@@ -86,8 +86,11 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 	var conn net.Conn
 	var err error
 
-	cnt := int(b.count)
+	if b.tunnels <= 0 {
+		return net.Dial("tcp", req.backend.address)
+	}
 
+	cnt := int(b.count)
 	for i := 0; i < b.tunnels; i++ {
 
 		index := (cnt + i) / b.tunnels
