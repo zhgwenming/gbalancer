@@ -22,13 +22,13 @@ type spdyConn struct {
 }
 
 type spdySession struct {
-	backend *Backend
-	spdy    *spdyConn
-	index   int
+	backend   *Backend
+	spdy      *spdyConn
+	connindex int
 }
 
 func NewSpdySession(backend *Backend, index int) *spdySession {
-	return &spdySession{backend: backend, index: index}
+	return &spdySession{backend: backend, connindex: index}
 }
 
 func NewSpdyConn(conn net.Conn) *spdyConn {

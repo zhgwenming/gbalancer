@@ -112,7 +112,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 				}
 			} else {
 				// this is active backend, just switch the spdy connection
-				b.SwitchSpdyConn(session.index, session.spdy)
+				b.SwitchSpdyConn(session.connindex, session.spdy)
 			}
 		case j := <-job:
 			// add to pending list
