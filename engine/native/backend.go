@@ -48,6 +48,7 @@ func (b *Backend) SwitchSpdyConn(index int, to *spdyConn) {
 	b.spdyconn[index] = to
 }
 
+// Create new tunnel session if necessary
 func (b *Backend) SpdyCheck(backChan chan<- *spdySession) {
 	if b.tunnels > 0 {
 		b.count++
@@ -55,17 +56,24 @@ func (b *Backend) SpdyCheck(backChan chan<- *spdySession) {
 		index := int(b.count) / b.tunnels
 		spdyconn := b.spdyconn[index]
 
-		if !spdyconn.switching {
-			spdyconn.switching = true
-			// check to see if the spdyConn needed to be switched
-			if uint32(spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
-				go CreateSpdySession(NewSpdySession(b, index), backChan)
+		if spdyconn != nil {
+			// pre-create spdyconn to avoid out of StreamId
+			if !spdyconn.switching {
+				spdyconn.switching = true
+				// check to see if the spdyConn needed to be switched
+				if uint32(spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
+					go CreateSpdySession(NewSpdySession(b, index), backChan)
+				}
 			}
+		} else {
+			log.Printf("create new session for %s", b.address)
+			go CreateSpdySession(NewSpdySession(b, index), backChan)
 		}
 	}
 }
 
 // Runs inside of Forwarder goroutine
+// takeoff the spdyconn if it's broken
 func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 	var conn net.Conn
 	var err error
