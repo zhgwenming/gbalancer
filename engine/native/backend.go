@@ -5,6 +5,7 @@
 package native
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"sync/atomic"
@@ -83,12 +84,12 @@ func (b *Backend) SpdyCheckStreamId(backChan chan<- *spdySession) {
 // Runs inside of Forwarder goroutine
 // takeoff the spdyconn if it's broken
 func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
-	var conn net.Conn
-	var err error
-
 	if b.tunnels <= 0 {
 		return net.Dial("tcp", req.backend.address)
 	}
+
+	var conn net.Conn
+	err := fmt.Errorf("No stream sesssion exist")
 
 	cnt := int(b.count)
 	for i := 0; i < b.tunnels; i++ {
