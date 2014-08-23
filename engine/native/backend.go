@@ -29,10 +29,11 @@ type Backend struct {
 	ongoing  uint
 	flags    BackendFlags
 
-	tunnels int
-	count   uint64
-	RxBytes uint64
-	TxBytes uint64
+	failChan *chan *spdySession
+	tunnels  int
+	count    uint64
+	RxBytes  uint64
+	TxBytes  uint64
 }
 
 func NewBackend(addr string, tunnels int) *Backend {
@@ -49,13 +50,14 @@ func NewBackend(addr string, tunnels int) *Backend {
 }
 
 func (b *Backend) SwitchSpdyConn(index int, to *spdyConn) {
-	from := b.spdyconn[index]
-	from.conn.Close()
+	if from := b.spdyconn[index]; from != nil {
+		from.conn.Close()
+	}
 	b.spdyconn[index] = to
 }
 
-// Create new tunnel session if necessary
-func (b *Backend) SpdyCheck(backChan chan<- *spdySession) {
+// Create new tunnel session if the streamId almost used up
+func (b *Backend) SpdyCheckStreamId(backChan chan<- *spdySession) {
 	if b.tunnels == 0 || time.Since(spdyCheckTime) < 5*time.Second {
 		return
 	}
@@ -74,9 +76,6 @@ func (b *Backend) SpdyCheck(backChan chan<- *spdySession) {
 					go CreateSpdySession(NewSpdySession(b, index), backChan)
 				}
 			}
-		} else {
-			log.Printf("create new session for %s", b.address)
-			go CreateSpdySession(NewSpdySession(b, index), backChan)
 		}
 	}
 }
@@ -110,6 +109,7 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 
 					// try to close exist session
 					spdyconn.conn.Close()
+					*b.failChan <- NewSpdySession(b, index)
 				}
 			} else {
 				break
