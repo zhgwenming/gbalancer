@@ -25,12 +25,12 @@ type Forwarder struct {
 }
 
 type Scheduler struct {
-	pool           Pool
-	backends       map[string]*Backend
-	done           chan *Request // to use heap to schedule
-	pending        []*Request
-	tunnels        int
-	newSessionChan chan *spdySession
+	pool          Pool
+	backends      map[string]*Backend
+	done          chan *Request // to use heap to schedule
+	pending       []*Request
+	tunnels       int
+	newTunnelChan chan *spdySession
 }
 
 // it's a max heap if we do persistent scheduling
@@ -85,14 +85,14 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 				b := NewBackend(addr, s.tunnels)
 				if s.tunnels > 0 {
 					for i := 0; i < s.tunnels; i++ {
-						go CreateSpdySession(NewSpdySession(b, i), s.newSessionChan)
+						go CreateSpdySession(NewSpdySession(b, i), s.newTunnelChan)
 					}
 				} else {
 					s.AddBackend(b)
 				}
 			}
 
-		case session := <-s.newSessionChan:
+		case session := <-s.newTunnelChan:
 			b := session.backend
 			if _, ok := s.backends[b.address]; !ok {
 				// a new backend, add it to the hash
@@ -135,7 +135,7 @@ func (s *Scheduler) dispatch(req *Request) {
 	b.ongoing++
 
 	heap.Push(&s.pool, b)
-	b.SpdyCheck(s.newSessionChan)
+	b.SpdyCheck(s.newTunnelChan)
 	req.backend = b
 	go s.run(req)
 }
