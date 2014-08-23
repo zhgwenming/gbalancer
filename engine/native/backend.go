@@ -23,16 +23,16 @@ var (
 )
 
 type Backend struct {
-	spdyconn   []*spdyConn
-	address    string
-	index      int // heap related fields
-	ongoing    uint
-	flags      BackendFlags
-	tunnelChan *chan *spdySession // tunnel related fields
-	tunnels    int
-	count      uint64
-	RxBytes    uint64
-	TxBytes    uint64
+	spdyconn []*spdyConn
+	address  string
+	index    int // heap related fields
+	ongoing  uint
+	flags    BackendFlags
+
+	tunnels int
+	count   uint64
+	RxBytes uint64
+	TxBytes uint64
 }
 
 func NewBackend(addr string, tunnels int) *Backend {
@@ -55,26 +55,28 @@ func (b *Backend) SwitchSpdyConn(index int, to *spdyConn) {
 }
 
 // Create new tunnel session if necessary
-func (b *Backend) SpdyCheck() {
-	if b.tunnels > 0 && time.Since(spdyCheckTime) > 5*time.Second {
-		spdyCheckTime = time.Now()
-		for index := 0; index < b.tunnels; index++ {
-			spdyconn := b.spdyconn[index]
+func (b *Backend) SpdyCheck(backChan chan<- *spdySession) {
+	if b.tunnels == 0 || time.Since(spdyCheckTime) < 5*time.Second {
+		return
+	}
 
-			if spdyconn != nil {
-				// pre-create spdyconn to avoid out of StreamId
-				if !spdyconn.switching {
-					spdyconn.switching = true
-					// check to see if the spdyConn needed to be switched
-					if uint32(spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
-						log.Printf("pre-create new session for %s", b.address)
-						go CreateSpdySession(NewSpdySession(b, index), *b.tunnelChan)
-					}
+	spdyCheckTime = time.Now()
+	for index := 0; index < b.tunnels; index++ {
+		spdyconn := b.spdyconn[index]
+
+		if spdyconn != nil {
+			// pre-create spdyconn to avoid out of StreamId
+			if !spdyconn.switching {
+				spdyconn.switching = true
+				// check to see if the spdyConn needed to be switched
+				if uint32(spdyconn.conn.PeekNextStreamId()) > ThreshStreamId {
+					log.Printf("pre-create new session for %s", b.address)
+					go CreateSpdySession(NewSpdySession(b, index), backChan)
 				}
-			} else {
-				log.Printf("create new session for %s", b.address)
-				go CreateSpdySession(NewSpdySession(b, index), *b.tunnelChan)
 			}
+		} else {
+			log.Printf("create new session for %s", b.address)
+			go CreateSpdySession(NewSpdySession(b, index), backChan)
 		}
 	}
 }

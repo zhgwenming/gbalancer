@@ -84,7 +84,6 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			for _, addr := range addrs {
 				b := NewBackend(addr, s.tunnels)
 				if s.tunnels > 0 {
-					b.tunnelChan = &s.newTunnelChan
 					for i := 0; i < s.tunnels; i++ {
 						go CreateSpdySession(NewSpdySession(b, i), s.newTunnelChan)
 					}
@@ -136,7 +135,7 @@ func (s *Scheduler) dispatch(req *Request) {
 	b.ongoing++
 
 	heap.Push(&s.pool, b)
-	b.SpdyCheck()
+	b.SpdyCheck(s.newTunnelChan)
 	req.backend = b
 	go s.run(req)
 }
