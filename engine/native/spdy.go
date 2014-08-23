@@ -80,6 +80,7 @@ func CreateSpdySession(request *spdySession, ready chan<- *spdySession) {
 			log.Printf("Created new session for: %s", request.backend.address)
 			break
 		}
+		time.Sleep(time.Second)
 	}
 	ready <- request
 }
