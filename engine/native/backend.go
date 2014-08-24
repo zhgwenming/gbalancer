@@ -77,10 +77,10 @@ func (b *Backend) SpdyCheckStreamId(backChan chan<- *spdySession) {
 		if tunnel[index].conn != nil {
 			// pre-create spdyconn to avoid out of StreamId
 			if !tunnel[index].switching {
-				tunnel[index].switching = true
 				// check to see if the spdyConn needed to be switched
 				if uint32(tunnel[index].conn.PeekNextStreamId()) > ThreshStreamId {
 					log.Printf("pre-create new session for %s", b.address)
+					tunnel[index].switching = true
 					go CreateSpdySession(NewSpdySession(b, index), backChan)
 				}
 			}
