@@ -96,7 +96,7 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 	cnt := int(b.count)
 	for i := 0; i < b.tunnels; i++ {
 
-		index := (cnt + i) / b.tunnels
+		index := (cnt + i) % b.tunnels
 		spdyconn := b.tunnel[index].conn
 
 		if spdyconn != nil {
