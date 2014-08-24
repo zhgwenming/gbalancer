@@ -61,6 +61,11 @@ func (b *Backend) SwitchSpdyConn(index int, to *connTunnel) {
 
 // Create new tunnel session if the streamId almost used up
 func (b *Backend) SpdyCheckStreamId(backChan chan<- *spdySession) {
+
+	// for whatever cases
+	// increase the count number first
+	b.count++
+
 	if b.tunnels == 0 || time.Since(spdyCheckTime) < 5*time.Second {
 		return
 	}
