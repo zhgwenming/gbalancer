@@ -15,7 +15,7 @@ const (
 	STREAMPORT = "6900"
 )
 
-type spdyConn struct {
+type connTunnel struct {
 	conn      *spdystream.Connection
 	tcpAddr   *net.TCPAddr
 	switching bool
@@ -23,7 +23,7 @@ type spdyConn struct {
 
 type spdySession struct {
 	backend   *Backend
-	spdy      *spdyConn
+	spdy      *connTunnel
 	connindex int
 }
 
@@ -31,8 +31,8 @@ func NewSpdySession(backend *Backend, index int) *spdySession {
 	return &spdySession{backend: backend, connindex: index}
 }
 
-func NewSpdyConn(conn net.Conn) *spdyConn {
-	var spdyconn *spdyConn
+func NewConnTunnel(conn net.Conn) *connTunnel {
+	var spdyconn *connTunnel
 
 	if conn == nil {
 		return nil
@@ -54,22 +54,22 @@ func NewSpdyConn(conn net.Conn) *spdyConn {
 			return nil
 		}
 
-		spdyconn = &spdyConn{conn: spdy, tcpAddr: tcpaddr, switching: false}
+		spdyconn = &connTunnel{conn: spdy, tcpAddr: tcpaddr, switching: false}
 	}
 
 	return spdyconn
 }
 
-func NewStreamConn(addr, port string) (*spdyConn, error) {
+func NewStreamConn(addr, port string) (*connTunnel, error) {
 	conn, err := net.DialTimeout("tcp", addr+":"+port, time.Second)
 	if err != nil {
 		log.Printf("dail spdy error: %s", err)
 		return nil, err
 	}
 
-	spdyConn := NewSpdyConn(conn)
+	connTunnel := NewConnTunnel(conn)
 
-	return spdyConn, nil
+	return connTunnel, nil
 }
 
 func CreateSpdySession(request *spdySession, ready chan<- *spdySession) {
