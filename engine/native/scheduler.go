@@ -99,6 +99,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			backend := session.backend
 			index := session.connindex
 			if !backend.tunnel[index].switching {
+				backend.tunnel[index].switching = true
 				go CreateSpdySession(session, s.newTunnelChan)
 			}
 		case session := <-s.newTunnelChan:
