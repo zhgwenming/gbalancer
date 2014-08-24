@@ -51,10 +51,12 @@ func NewBackend(addr string, tunnels int) *Backend {
 }
 
 func (b *Backend) SwitchSpdyConn(index int, to *spdyConn) {
-	if from := b.spdyconn[index]; from != nil {
-		from.conn.Close()
+	if from := b.spdyconn[index].conn; from != nil {
+		from.Close()
 	}
-	b.spdyconn[index] = to
+	b.spdyconn[index].conn = to.conn
+	b.spdyconn[index].tcpAddr = to.tcpAddr
+	b.spdyconn[index].switching = false
 }
 
 // Create new tunnel session if the streamId almost used up
@@ -95,12 +97,12 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 	for i := 0; i < b.tunnels; i++ {
 
 		index := (cnt + i) / b.tunnels
-		spdyconn := b.spdyconn[index]
+		spdyconn := b.spdyconn[index].conn
 
 		if spdyconn != nil {
-			conn, err = spdyconn.conn.CreateStream(http.Header{}, nil, false)
+			conn, err = spdyconn.CreateStream(http.Header{}, nil, false)
 			if err != nil {
-				spdyptr := (*unsafe.Pointer)(unsafe.Pointer(&b.spdyconn[index]))
+				spdyptr := (*unsafe.Pointer)(unsafe.Pointer(&b.spdyconn[index].conn))
 
 				swapped := atomic.CompareAndSwapPointer(spdyptr, unsafe.Pointer(spdyconn), nil)
 				if swapped {
@@ -112,7 +114,7 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 					}
 
 					// try to close exist session
-					spdyconn.conn.Close()
+					spdyconn.Close()
 					*b.failChan <- NewSpdySession(b, index)
 				}
 			} else {
