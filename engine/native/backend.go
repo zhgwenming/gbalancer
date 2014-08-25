@@ -31,13 +31,13 @@ type Backend struct {
 	flags   BackendFlags
 
 	failChan chan<- *spdySession
-	tunnels  int
+	tunnels  uint
 	count    uint64
 	RxBytes  uint64
 	TxBytes  uint64
 }
 
-func NewBackend(addr string, tunnels int) *Backend {
+func NewBackend(addr string, tunnels uint) *Backend {
 	tunnel := make([]connTunnel, tunnels, tunnels)
 
 	b := &Backend{
@@ -50,7 +50,7 @@ func NewBackend(addr string, tunnels int) *Backend {
 	return b
 }
 
-func (b *Backend) SwitchSpdyConn(index int, to *connTunnel) {
+func (b *Backend) SwitchSpdyConn(index uint, to *connTunnel) {
 	if from := b.tunnel[index].conn; from != nil {
 		from.Close()
 	}
@@ -75,7 +75,7 @@ func (b *Backend) SpdyCheckStreamId(backChan chan<- *spdySession) {
 	}
 
 	spdyCheckTime = time.Now()
-	for index := 0; index < b.tunnels; index++ {
+	for index := uint(0); index < b.tunnels; index++ {
 		tunnel := b.tunnel
 
 		if tunnel[index].conn != nil {
@@ -102,8 +102,8 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 	var conn net.Conn
 	err := fmt.Errorf("No stream sesssion exist")
 
-	cnt := int(b.count)
-	for i := 0; i < b.tunnels; i++ {
+	cnt := uint(b.count)
+	for i := uint(0); i < b.tunnels; i++ {
 
 		index := (cnt + i) % b.tunnels
 		spdyconn := b.tunnel[index].conn

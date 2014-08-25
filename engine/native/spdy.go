@@ -24,10 +24,10 @@ type connTunnel struct {
 type spdySession struct {
 	backend   *Backend
 	spdy      *connTunnel
-	connindex int
+	connindex uint
 }
 
-func NewSpdySession(backend *Backend, index int) *spdySession {
+func NewSpdySession(backend *Backend, index uint) *spdySession {
 	return &spdySession{backend: backend, connindex: index}
 }
 
