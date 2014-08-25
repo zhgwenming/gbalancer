@@ -39,7 +39,8 @@ func main() {
 	if *pidFile != "" {
 		if err := utils.WritePid(*pidFile); err != nil {
 			fmt.Printf("error: %s\n", err)
-			log.Fatal("error:", err)
+			log.Printf("error: %s", err)
+			os.Exit(1)
 		}
 		defer func() {
 			if err := os.Remove(*pidFile); err != nil {
@@ -50,17 +51,20 @@ func main() {
 
 	listener, err := net.Listen("tcp", *listenAddr)
 	if err != nil {
-		panic(err)
+		fmt.Printf("Listen error: %s\n", err)
+		log.Printf("Listen error: %s", err)
+		os.Exit(1)
 	}
+
 	go func() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				panic(err)
+				log.Printf("Accept error: %s", err)
 			}
 			spdyConn, err := spdystream.NewConnection(conn, true)
 			if err != nil {
-				panic(err)
+				log.Printf("New spdyConnection error, %s", err)
 			}
 			go spdyConn.Serve(AgentStreamHandler)
 		}
