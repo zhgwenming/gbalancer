@@ -85,7 +85,8 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			// 2. add them to scheduler
 			for _, addr := range addrs {
 				b := NewBackend(addr, s.tunnels)
-				b.failChan = &s.spdyFailChan
+				//b.failChan = &s.spdyFailChan
+				b.FailChan(s.spdyFailChan)
 				if s.tunnels > 0 {
 					for i := 0; i < s.tunnels; i++ {
 						go CreateSpdySession(NewSpdySession(b, i), s.newTunnelChan)

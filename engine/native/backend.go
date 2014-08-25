@@ -30,7 +30,7 @@ type Backend struct {
 	ongoing uint
 	flags   BackendFlags
 
-	failChan *chan *spdySession
+	failChan chan<- *spdySession
 	tunnels  int
 	count    uint64
 	RxBytes  uint64
@@ -57,6 +57,10 @@ func (b *Backend) SwitchSpdyConn(index int, to *connTunnel) {
 	b.tunnel[index].conn = to.conn
 	b.tunnel[index].tcpAddr = to.tcpAddr
 	b.tunnel[index].switching = false
+}
+
+func (b *Backend) FailChan(fail chan<- *spdySession) {
+	b.failChan = fail
 }
 
 // Create new tunnel session if the streamId almost used up
@@ -120,7 +124,7 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 
 					// try to close exist session
 					spdyconn.Close()
-					*b.failChan <- NewSpdySession(b, index)
+					b.failChan <- NewSpdySession(b, index)
 				}
 			} else {
 				break
