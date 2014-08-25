@@ -99,6 +99,7 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 		return net.Dial("tcp", req.backend.address)
 	}
 
+	var found bool
 	var conn net.Conn
 	err := fmt.Errorf("No stream sesssion exist")
 
@@ -109,6 +110,7 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 		spdyconn := b.tunnel[index].conn
 
 		if spdyconn != nil {
+			found = true
 			conn, err = spdyconn.CreateStream(http.Header{}, nil, false)
 			if err != nil {
 				spdyptr := (*unsafe.Pointer)(unsafe.Pointer(&b.tunnel[index].conn))
@@ -133,7 +135,11 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 	}
 
 	if err != nil {
-		log.Printf("Failed to create stream, roll back to tcp mode. (%s)", err)
+		// just log error if we have at lease one connection in the tunnel
+		// if we don't, just fall back to tcp mode silently
+		if found {
+			log.Printf("Failed to create stream, rolling back to tcp mode. (%s)", err)
+		}
 		conn, err = net.Dial("tcp", req.backend.address)
 	}
 
