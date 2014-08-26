@@ -75,12 +75,15 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			}
 
 			// the NEW active backends
-			// 1. shuffle them first
 			var addrs []string
 			for addr := range backends {
 				addrs = append(addrs, addr)
 			}
-			addrs = utils.Shuffle(addrs)
+
+			// 1. shuffle them first if needed
+			if *shuffle {
+				addrs = utils.Shuffle(addrs)
+			}
 
 			// 2. add them to scheduler
 			for _, addr := range addrs {
