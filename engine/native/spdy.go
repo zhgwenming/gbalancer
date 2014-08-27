@@ -74,8 +74,8 @@ func NewStreamConn(addr, port string) (*connTunnel, error) {
 
 func CreateSpdySession(request *spdySession, ready chan<- *spdySession) {
 	for {
-		//addrs := strings.Split(backend.address, ":")
-		if conn, err := NewStreamConn("127.0.0.1", STREAMPORT); err == nil {
+		addrs := strings.Split(backend.address, ":")
+		if conn, err := NewStreamConn(addrs[0], STREAMPORT); err == nil {
 			request.spdy = conn
 			log.Printf("Created new session for: %s", request.backend.address)
 			break
