@@ -10,6 +10,7 @@ import (
 	"github.com/zhgwenming/gbalancer/utils"
 	"io"
 	"net"
+	"sort"
 )
 
 type Request struct {
@@ -83,6 +84,8 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			// 1. shuffle them first if needed
 			if *shuffle {
 				addrs = utils.Shuffle(addrs)
+			} else {
+				sort.Strings(addrs)
 			}
 
 			// 2. add them to scheduler
