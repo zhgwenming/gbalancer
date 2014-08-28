@@ -29,7 +29,8 @@ gbalancer load balancing service
 make
 
 %install
-install -D -p  gbalancer %{buildroot}%{_bindir}/gbalancer
+install -D -p  build/bin/gbalancer %{buildroot}%{_bindir}/gbalancer
+install -D -p  build/bin/streamd %{buildroot}%{_bindir}/streamd
 #install -D -p -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/%{name}.service
 #install -D -p -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/%{name}.socket
 
@@ -44,11 +45,16 @@ install -D -p  gbalancer %{buildroot}%{_bindir}/gbalancer
 
 %files
 %{_bindir}/gbalancer
+%{_bindir}/streamd
 #%{_unitdir}/%{name}.service
 #%{_unitdir}/%{name}.socket
 %doc README.md
 
 %changelog
+* Wed Aug 27 2014 Albert Zhang <zhgwenming@gmail.com> - 0.6-1
+- shuffle flag
+- gbalancer tunnel mode
+
 * Thu Jul 14 2014 Albert Zhang <zhgwenming@gmail.com> - 0.5.4-1
 - initial version
 
