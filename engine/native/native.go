@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	log      = logger.NewLogger()
-	tunnels  = flag.Uint("tunnels", 0, "number of tunnels per server")
-	failover = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
-	shuffle  = flag.Bool("shuffle", true, "whether to enable shuffle for server list")
+	log        = logger.NewLogger()
+	tunnels    = flag.Uint("tunnels", 0, "number of tunnels per server")
+	streamPort = flag.String("streamport", "6900", "port of the remote stream server")
+	failover   = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
+	shuffle    = flag.Bool("shuffle", true, "whether to enable shuffle for server list")
 )
 
 func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan struct{}, status chan map[string]int) {
