@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strings"
 )
 
 type copyRet struct {
@@ -23,8 +24,16 @@ func streamCopy(dst io.WriteCloser, src io.Reader) {
 
 // Tunnel Handler
 func AgentStreamHandler(stream *spdystream.Stream) {
-	conn, err := net.Dial("unix", *serviceAddr)
+	var conn net.Conn
+	var err error
+
+	if strings.Contains(*serviceAddr, ":") {
+		conn, err = net.Dial("tcp", *serviceAddr)
+	} else {
+		conn, err = net.Dial("unix", *serviceAddr)
+	}
 	//conn, err := net.Dial("tcp", "10.100.91.74:3306")
+
 	if err != nil {
 		log.Printf("Failed: %s\n", err)
 		return
