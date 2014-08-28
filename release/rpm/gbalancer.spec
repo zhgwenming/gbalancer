@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:		gbalancer
-Version:	0.6
+Version:	0.6.1
 Release:	1%{?dist}
 Summary:	gbalancer orchestration tool
 
