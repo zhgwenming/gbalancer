@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:		gbalancer
-Version:	0.6.1
+Version:	0.6.2
 Release:	1%{?dist}
 Summary:	gbalancer orchestration tool
 
@@ -51,6 +51,9 @@ install -D -p  build/bin/streamd %{buildroot}%{_bindir}/streamd
 %doc README.md
 
 %changelog
+* Mon Sep 01 2014 Albert Zhang <zhgwenming@gmail.com> - 0.6.2
+- stream drain issue
+
 * Wed Aug 27 2014 Albert Zhang <zhgwenming@gmail.com> - 0.6-1
 - shuffle flag
 - gbalancer tunnel mode
