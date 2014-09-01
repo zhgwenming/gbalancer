@@ -47,7 +47,9 @@ func AgentStreamHandler(stream *spdystream.Stream) {
 	// drain the header requests to avoid DoS
 	go func() {
 		for {
-			stream.ReceiveHeader()
+			if _, err := stream.ReceiveHeader(); err != nil {
+				return
+			}
 		}
 	}()
 
