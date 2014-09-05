@@ -27,6 +27,7 @@ type Forwarder struct {
 
 type Scheduler struct {
 	pool          Pool
+	backendSeq    uint
 	backends      map[string]*Backend
 	done          chan *Request // to use heap to schedule
 	pending       []*Request
@@ -46,8 +47,13 @@ func NewScheduler(max bool, tunnels uint) *Scheduler {
 	readyChan := make(chan *spdySession, MaxBackends)
 	failChan := make(chan *spdySession, MaxBackends)
 
-	scheduler := &Scheduler{pool, backends, done, pending, tunnels, readyChan, failChan}
+	scheduler := &Scheduler{pool, 0, backends, done, pending, tunnels, readyChan, failChan}
 	return scheduler
+}
+
+func (s *Scheduler) nextBackendSequence() uint {
+	s.backendSeq += 1
+	return s.backendSeq
 }
 
 func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
@@ -90,7 +96,13 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 
 			// 2. add them to scheduler
 			for _, addr := range addrs {
-				b := NewBackend(addr, s.tunnels)
+				var weight uint
+				if *shuffle {
+					weight = 0
+				} else {
+					weight = s.nextBackendSequence()
+				}
+				b := NewBackend(addr, s.tunnels, weight)
 				//b.failChan = &s.spdyFailChan
 				b.FailChan(s.spdyFailChan)
 				if s.tunnels > 0 {

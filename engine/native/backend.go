@@ -28,6 +28,7 @@ type Backend struct {
 	address string
 	index   int // heap related fields
 	ongoing uint
+	weight  uint // as sequence in max heap, weight in min heap
 	flags   BackendFlags
 
 	failChan chan<- *spdySession
@@ -37,12 +38,13 @@ type Backend struct {
 	TxBytes  uint64
 }
 
-func NewBackend(addr string, tunnels uint) *Backend {
+func NewBackend(addr string, tunnels uint, weight uint) *Backend {
 	tunnel := make([]connTunnel, tunnels, tunnels)
 
 	b := &Backend{
 		tunnel:  tunnel,
 		address: addr,
+		weight:  weight,
 		tunnels: tunnels,
 		flags:   FlagInit,
 	}
