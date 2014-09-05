@@ -1,14 +1,14 @@
 {
     "service": "galera",
     "user": "monitor",
-    "pass": "3FNg6IKe",
+    "pass": "v2efQBdw",
     "addr": "127.0.0.1",
     "port": "3307",
     "listen": [
 	"unix:///tmp/mysql.sock"
     ],
     "backend": [
-        "11.100.91.72:3306",
-        "10.100.91.71:3306"
+        "10.200.86.3:3306",
+        "10.200.86.4:3306"
     ]
 }
