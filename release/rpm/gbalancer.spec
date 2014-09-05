@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:		gbalancer
-Version:	0.6.2
+Version:	0.6.3
 Release:	1%{?dist}
 Summary:	gbalancer orchestration tool
 
@@ -51,6 +51,10 @@ install -D -p  build/bin/streamd %{buildroot}%{_bindir}/streamd
 %doc README.md
 
 %changelog
+* Fri Sep 05 2014 Albert Zhang <zhgwenming@gmail.com> - 0.6.3
+- make failover as leaseweight mode
+- make failover persistent if there's idle state between requests
+
 * Mon Sep 01 2014 Albert Zhang <zhgwenming@gmail.com> - 0.6.2
 - stream drain issue
 
