@@ -36,9 +36,9 @@ type Scheduler struct {
 	spdyFailChan  chan *spdySession
 }
 
-// it's a max heap if we do persistent scheduling
-func NewScheduler(max bool, tunnels uint) *Scheduler {
-	pool := Pool{make([]*Backend, 0, MaxForwarders), max}
+// it's a leastweight heap if we do persistent scheduling
+func NewScheduler(lw bool, tunnels uint) *Scheduler {
+	pool := Pool{make([]*Backend, 0, MaxForwarders), lw}
 	backends := make(map[string]*Backend, MaxBackends)
 
 	done := make(chan *Request, MaxForwarders)

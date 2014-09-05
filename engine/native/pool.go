@@ -6,8 +6,8 @@ package native
 
 type Pool struct {
 	backends []*Backend
-	// max/min heap
-	max bool
+	// leastweight/min heap
+	leastweight bool
 }
 
 func (p Pool) Len() int {
@@ -15,8 +15,8 @@ func (p Pool) Len() int {
 }
 
 func (p Pool) Less(i, j int) bool {
-	if p.max {
-		return p.backends[i].ongoing > p.backends[j].ongoing
+	if p.leastweight {
+		return p.backends[i].weight < p.backends[j].weight
 	} else {
 		return p.backends[i].ongoing < p.backends[j].ongoing
 	}
