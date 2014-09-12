@@ -56,7 +56,7 @@ iface:
 				ipnet, ok := ipaddr.(*net.IPNet)
 
 				if !ok {
-					log.Fatal("assertion err: %v\n", ipnet)
+					log.Fatalf("assertion err: %v\n", ipnet)
 				}
 
 				ip4 := ipnet.IP.To4()
