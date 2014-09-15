@@ -73,6 +73,8 @@ func NewStreamConn(addr, port string) (*connTunnel, error) {
 }
 
 func CreateSpdySession(request *spdySession, ready chan<- *spdySession) {
+	defer RecoverReport()
+
 	for {
 		addrs := strings.Split(request.backend.address, ":")
 		if conn, err := NewStreamConn(addrs[0], *streamPort); err == nil {

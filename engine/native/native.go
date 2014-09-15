@@ -9,6 +9,7 @@ import (
 	"github.com/zhgwenming/gbalancer/config"
 	logger "github.com/zhgwenming/gbalancer/log"
 	"net"
+	"runtime/debug"
 	"sync"
 )
 
@@ -66,5 +67,11 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 				}
 			}
 		}(listenAddr)
+	}
+}
+
+func RecoverReport() {
+	if p := recover(); p != nil {
+		log.Printf("%s\nbacktrace:\n%s", p, debug.Stack())
 	}
 }

@@ -6,7 +6,6 @@ package native
 
 import (
 	"container/heap"
-	"runtime/debug"
 	//splice "github.com/creack/go-splice"
 	"github.com/zhgwenming/gbalancer/utils"
 	"io"
@@ -65,11 +64,7 @@ func (s *Scheduler) EventLoop(job chan *Request, status <-chan map[string]int) {
 }
 
 func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
-	defer func() {
-		if p := recover(); p != nil {
-			log.Printf("%s\nbacktrace:\n%s", p, debug.Stack())
-		}
-	}()
+	defer RecoverReport()
 
 	for {
 		select {
