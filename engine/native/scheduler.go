@@ -6,6 +6,7 @@ package native
 
 import (
 	"container/heap"
+	"runtime/debug"
 	//splice "github.com/creack/go-splice"
 	"github.com/zhgwenming/gbalancer/utils"
 	"io"
@@ -56,7 +57,20 @@ func (s *Scheduler) nextBackendSequence() uint {
 	return s.backendSeq
 }
 
+func (s *Scheduler) EventLoop(job chan *Request, status <-chan map[string]int) {
+	// loop forever to recover for errors
+	for {
+		s.Schedule(job, status)
+	}
+}
+
 func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
+	defer func() {
+		if p := recover(); p != nil {
+			log.Printf("%s\nbacktrace:\n%s", p, debug.Stack())
+		}
+	}()
+
 	for {
 		select {
 		case back := <-s.done:

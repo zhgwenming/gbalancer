@@ -25,7 +25,7 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 
 	// start the scheduler
 	sch := NewScheduler(*failover, *tunnels)
-	go sch.Schedule(job, status)
+	go sch.EventLoop(job, status)
 
 	listenAddrs, err := settings.GetListenAddrs()
 	if err != nil {
