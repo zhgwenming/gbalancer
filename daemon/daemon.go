@@ -21,7 +21,11 @@ var (
 )
 
 func init() {
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigChan,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGQUIT,
+		syscall.SIGTERM)
 }
 
 func CreatePidfile() {
