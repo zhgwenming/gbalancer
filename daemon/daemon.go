@@ -9,15 +9,22 @@ import (
 	"fmt"
 	logger "github.com/zhgwenming/gbalancer/log"
 	"github.com/zhgwenming/gbalancer/utils"
+	//"io/ioutil"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 )
 
+const (
+	DAEMON_ENV = "__GO_DAEMON_MODE"
+)
+
 var (
-	log     = logger.NewLogger()
-	pidFile = flag.String("pidfile", "", "pid file")
-	sigChan = make(chan os.Signal, 1)
+	log        = logger.NewLogger()
+	daemonMode = flag.Bool("daemon", false, "daemon mode")
+	pidFile    = flag.String("pidfile", "", "pid file")
+	sigChan    = make(chan os.Signal, 1)
 )
 
 func init() {
@@ -26,6 +33,32 @@ func init() {
 		syscall.SIGINT,
 		syscall.SIGQUIT,
 		syscall.SIGTERM)
+
+	if !*daemonMode {
+		return
+	}
+
+	if _, child := syscall.Getenv(DAEMON_ENV); child {
+		syscall.Unsetenv(DAEMON_ENV)
+	} else {
+		err := syscall.Setenv(DAEMON_ENV, "")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		syscall.Setsid()
+
+		cmd := exec.Command(os.Args[0], os.Args...)
+		if err = cmd.Start(); err == nil {
+			log.Printf("Started daemon as pid %s\n", cmd.Process.Pid)
+			os.Exit(0)
+		} else {
+			log.Printf("error to run in daemon mode - %s", err)
+			os.Exit(1)
+		}
+	}
+
+	os.Chdir("/")
 }
 
 func CreatePidfile() {
