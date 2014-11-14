@@ -24,7 +24,6 @@ var (
 	wgroup       = &sync.WaitGroup{}
 	log          = logger.NewLogger()
 	configFile   = flag.String("config", "gbalancer.json", "Configuration file")
-	daemonMode   = flag.Bool("daemon", false, "daemon mode")
 	printVersion = flag.Bool("version", false, "print gbalancer version")
 )
 
@@ -40,10 +39,6 @@ func main() {
 
 	if *printVersion {
 		PrintVersion()
-	}
-
-	if *daemonMode {
-		os.Chdir("/")
 	}
 
 	// Load configurations
