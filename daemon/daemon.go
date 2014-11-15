@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 )
 
@@ -23,9 +24,18 @@ var (
 	pidFile string
 )
 
+func fatal(err err) {
+	fmt.Printf("error: %s\n", err)
+	os.Exit(1)
+}
+
 func setupPidfile(pidfile string) {
 	if pidfile != "" {
-		pidFile = pidfile
+		if dir, err := os.Getwd(); err != nil {
+			fatal(err)
+		} else {
+			pidFile = filepath.Join(dir, pidfile)
+		}
 		if err := utils.WritePid(pidfile); err != nil {
 			fmt.Printf("error: %s\n", err)
 			os.Exit(1)
@@ -65,6 +75,9 @@ func Start(pidfile string) {
 		}
 
 		cmd := exec.Command(os.Args[0], os.Args[1:]...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
 		if err = cmd.Start(); err == nil {
 			fmt.Printf("Started daemon as pid %d\n", cmd.Process.Pid)
 			os.Exit(0)
