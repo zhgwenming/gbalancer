@@ -84,7 +84,10 @@ func WaitSignal(cleanup func()) {
 		break
 	}
 
-	cleanup()
+	// only run hook if it's specified
+	if cleanup != nil {
+		cleanup()
+	}
 	cleanPidfile()
 	return
 }
