@@ -55,13 +55,15 @@ func Start(pidfile string, foreground bool) {
 		syscall.SIGTERM)
 
 	// switch to use abs pidfile, background daemon will chdir to /
-	if filepath.IsAbs(pidfile) {
-		pidFile = pidfile
-	} else {
-		if dir, err := os.Getwd(); err != nil {
-			fatal(err)
+	if pidfile != "" {
+		if filepath.IsAbs(pidfile) {
+			pidFile = pidfile
 		} else {
-			pidFile = filepath.Join(dir, pidfile)
+			if dir, err := os.Getwd(); err != nil {
+				fatal(err)
+			} else {
+				pidFile = filepath.Join(dir, pidfile)
+			}
 		}
 	}
 
