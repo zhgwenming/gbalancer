@@ -29,13 +29,8 @@ func fatal(err error) {
 	os.Exit(1)
 }
 
-func setupPidfile(pidfile string) {
-	if pidfile != "" {
-		if dir, err := os.Getwd(); err != nil {
-			fatal(err)
-		} else {
-			pidFile = filepath.Join(dir, pidfile)
-		}
+func setupPidfile() {
+	if pidFile != "" {
 		if err := utils.WritePid(pidFile); err != nil {
 			fmt.Printf("error: %s\n", err)
 			os.Exit(1)
@@ -61,11 +56,17 @@ func Start(pidfile string) {
 
 	if _, child := syscall.Getenv(DAEMON_ENV); child {
 		syscall.Unsetenv(DAEMON_ENV)
+		if dir, err := os.Getwd(); err != nil {
+			fatal(err)
+		} else {
+			pidFile = filepath.Join(dir, pidfile)
+		}
+
 		os.Chdir("/")
 		syscall.Setsid()
 
 		if pidfile != "" {
-			setupPidfile(pidfile)
+			setupPidfile()
 		}
 	} else {
 		err := syscall.Setenv(DAEMON_ENV, "")
