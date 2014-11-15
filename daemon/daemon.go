@@ -36,7 +36,7 @@ func setupPidfile(pidfile string) {
 		} else {
 			pidFile = filepath.Join(dir, pidfile)
 		}
-		if err := utils.WritePid(pidfile); err != nil {
+		if err := utils.WritePid(pidFile); err != nil {
 			fmt.Printf("error: %s\n", err)
 			os.Exit(1)
 		}
