@@ -97,7 +97,7 @@ func Start(pidfile string, foreground bool) {
 			fmt.Printf("- Started daemon as pid %d\n", cmd.Process.Pid)
 			os.Exit(0)
 		} else {
-			fmt.Printf("error to run in daemon mode - %s", err)
+			fmt.Printf("error to run in daemon mode - %s\n", err)
 			os.Exit(1)
 		}
 	}
@@ -106,7 +106,7 @@ func Start(pidfile string, foreground bool) {
 func WaitSignal(cleanup func()) {
 	// waiting for exit signals
 	for sig := range sigChan {
-		fmt.Printf("captured %v, exiting..", sig)
+		fmt.Printf("captured %v, exiting..\n", sig)
 		// exit if we get any signal
 		// Todo - catch signal other than SIGTERM/SIGINT
 		break
