@@ -25,6 +25,9 @@ var (
 	log          = logger.NewLogger()
 	configFile   = flag.String("config", "gbalancer.json", "Configuration file")
 	printVersion = flag.Bool("version", false, "print gbalancer version")
+
+	daemonMode = flag.Bool("daemon", false, "daemon mode")
+	pidFile    = flag.String("pidfile", "", "pid file")
 )
 
 func PrintVersion() {
@@ -49,7 +52,9 @@ func main() {
 	}
 	log.Printf(settings.ListenInfo())
 
-	daemon.CreatePidfile()
+	if *daemonMode {
+		daemon.Start(*pidFile)
+	}
 
 	// create the service goroutine
 	done := engine.Serve(settings, wgroup)
