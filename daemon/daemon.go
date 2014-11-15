@@ -24,7 +24,7 @@ var (
 	pidFile string
 )
 
-func fatal(err err) {
+func fatal(err error) {
 	fmt.Printf("error: %s\n", err)
 	os.Exit(1)
 }
