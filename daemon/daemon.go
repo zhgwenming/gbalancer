@@ -47,12 +47,17 @@ func cleanPidfile() {
 }
 
 // Start will setup the daemon environment and create pidfile if pidfile is not empty
-func Start(pidfile string) {
+func Start(pidfile string, foreground bool) {
 	signal.Notify(sigChan,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGQUIT,
 		syscall.SIGTERM)
+
+	if foreground {
+		fmt.Printf("Running as foreground process\n")
+		return
+	}
 
 	if _, child := syscall.Getenv(DAEMON_ENV); child {
 		syscall.Unsetenv(DAEMON_ENV)

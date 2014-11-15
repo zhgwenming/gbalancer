@@ -53,7 +53,7 @@ func main() {
 	log.Printf(settings.ListenInfo())
 
 	if *daemonMode {
-		daemon.Start(*pidFile)
+		daemon.Start(*pidFile, false)
 	}
 
 	// create the service goroutine
