@@ -54,25 +54,32 @@ func Start(pidfile string, foreground bool) {
 		syscall.SIGQUIT,
 		syscall.SIGTERM)
 
-	if foreground {
-		fmt.Printf("Running as foreground process\n")
-		return
-	}
-
-	if _, child := syscall.Getenv(DAEMON_ENV); child {
-		syscall.Unsetenv(DAEMON_ENV)
+	// switch to use abs pidfile, background daemon will chdir to /
+	if filepath.IsAbs(pidfile) {
+		pidFile = pidfile
+	} else {
 		if dir, err := os.Getwd(); err != nil {
 			fatal(err)
 		} else {
 			pidFile = filepath.Join(dir, pidfile)
 		}
+	}
 
+	// as a foreground process
+	if foreground {
+		fmt.Printf("Running as foreground process\n")
+		setupPidfile()
+		return
+	}
+
+	// background process, all the magic goes here
+	if _, child := syscall.Getenv(DAEMON_ENV); child {
+		syscall.Unsetenv(DAEMON_ENV)
 		os.Chdir("/")
 		syscall.Setsid()
 
-		if pidfile != "" {
-			setupPidfile()
-		}
+		setupPidfile()
+
 	} else {
 		err := syscall.Setenv(DAEMON_ENV, "")
 		if err != nil {
