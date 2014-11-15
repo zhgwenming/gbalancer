@@ -5,9 +5,7 @@
 package daemon
 
 import (
-	"flag"
 	"fmt"
-	logger "github.com/zhgwenming/gbalancer/log"
 	"github.com/zhgwenming/gbalancer/utils"
 	//"io/ioutil"
 	"os"
@@ -21,59 +19,58 @@ const (
 )
 
 var (
-	log        = logger.NewLogger()
-	daemonMode = flag.Bool("daemon", false, "daemon mode")
-	pidFile    = flag.String("pidfile", "", "pid file")
-	sigChan    = make(chan os.Signal, 1)
+	sigChan = make(chan os.Signal, 1)
+	pidFile string
 )
 
-func init() {
+func setupPidfile(pidfile string) {
+	if pidfile != "" {
+		pidFile = pidfile
+		if err := utils.WritePid(pidfile); err != nil {
+			fmt.Printf("error: %s\n", err)
+			os.Exit(1)
+		}
+	}
+}
+
+func cleanPidfile() {
+	if pidFile != "" {
+		if err := os.Remove(pidFile); err != nil {
+			fmt.Printf("error to remove pidfile %s:", err)
+		}
+	}
+}
+
+// Start will setup the daemon environment and create pidfile if pidfile is not empty
+func Start(pidfile string) {
 	signal.Notify(sigChan,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGQUIT,
 		syscall.SIGTERM)
 
-	if !*daemonMode {
-		return
-	}
-
 	if _, child := syscall.Getenv(DAEMON_ENV); child {
 		syscall.Unsetenv(DAEMON_ENV)
+		os.Chdir("/")
+		syscall.Setsid()
+
+		if pidfile != "" {
+			setupPidfile(pidfile)
+		}
 	} else {
 		err := syscall.Setenv(DAEMON_ENV, "")
 		if err != nil {
-			log.Fatal(err)
+			fmt.Print(err)
+			os.Exit(1)
 		}
-
-		syscall.Setsid()
 
 		cmd := exec.Command(os.Args[0], os.Args...)
 		if err = cmd.Start(); err == nil {
-			log.Printf("Started daemon as pid %s\n", cmd.Process.Pid)
+			fmt.Printf("Started daemon as pid %s\n", cmd.Process.Pid)
 			os.Exit(0)
 		} else {
-			log.Printf("error to run in daemon mode - %s", err)
+			fmt.Printf("error to run in daemon mode - %s", err)
 			os.Exit(1)
-		}
-	}
-
-	os.Chdir("/")
-}
-
-func CreatePidfile() {
-	if *pidFile != "" {
-		if err := utils.WritePid(*pidFile); err != nil {
-			fmt.Printf("error: %s\n", err)
-			log.Fatal("error:", err)
-		}
-	}
-}
-
-func RemovePidfile() {
-	if *pidFile != "" {
-		if err := os.Remove(*pidFile); err != nil {
-			log.Printf("error to remove pidfile %s:", err)
 		}
 	}
 }
@@ -81,13 +78,13 @@ func RemovePidfile() {
 func WaitSignal(cleanup func()) {
 	// waiting for exit signals
 	for sig := range sigChan {
-		log.Printf("captured %v, exiting..", sig)
+		fmt.Printf("captured %v, exiting..", sig)
 		// exit if we get any signal
 		// Todo - catch signal other than SIGTERM/SIGINT
 		break
 	}
 
 	cleanup()
-	RemovePidfile()
+	cleanPidfile()
 	return
 }
