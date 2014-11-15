@@ -67,7 +67,7 @@ func Start(pidfile string, foreground bool) {
 
 	// as a foreground process
 	if foreground {
-		fmt.Printf("Running as foreground process\n")
+		fmt.Printf("- Running as foreground process\n")
 		setupPidfile()
 		return
 	}
@@ -92,7 +92,7 @@ func Start(pidfile string, foreground bool) {
 		cmd.Stderr = os.Stderr
 
 		if err = cmd.Start(); err == nil {
-			fmt.Printf("Started daemon as pid %d\n", cmd.Process.Pid)
+			fmt.Printf("- Started daemon as pid %d\n", cmd.Process.Pid)
 			os.Exit(0)
 		} else {
 			fmt.Printf("error to run in daemon mode - %s", err)
