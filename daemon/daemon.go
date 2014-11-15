@@ -64,7 +64,7 @@ func Start(pidfile string) {
 			os.Exit(1)
 		}
 
-		cmd := exec.Command(os.Args[0], os.Args...)
+		cmd := exec.Command(os.Args[0], os.Args[1:]...)
 		if err = cmd.Start(); err == nil {
 			fmt.Printf("Started daemon as pid %s\n", cmd.Process.Pid)
 			os.Exit(0)
