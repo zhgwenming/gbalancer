@@ -79,10 +79,35 @@ func (d *Daemon) cleanPidfile() {
 	}
 }
 
+func (d *Daemon) createLogfile() (*os.File, error) {
+	var err error
+	var file *os.File
+
+	if d.LogFile == "" {
+		if file, err = ioutil.TempFile("/tmp", "daemon.log"); err != nil {
+			fmt.Printf("- Failed to create output log file\n")
+		}
+	} else {
+		if file, err = os.Create(d.LogFile); err != nil {
+			fmt.Printf("- Failed to create output log file\n")
+		}
+	}
+
+	if err != nil {
+		return nil, err
+	} else {
+		fmt.Printf("- redirected the output to %s\n", file.Name())
+		return file, nil
+	}
+}
+
 // monitor or the worker process
 func (d *Daemon) child() {
 	os.Chdir("/")
-	syscall.Setsid()
+
+	// Setsid in the exec.Cmd.SysProcAttr.Setsid
+	//syscall.Setsid()
+
 	d.setupPidfile()
 
 	if !d.Restart {
@@ -138,30 +163,11 @@ func (d *Daemon) child() {
 	}
 }
 
-func (d *Daemon) createLogfile() (*os.File, error) {
-	var err error
-	var file *os.File
-
-	if d.LogFile == "" {
-		if file, err = ioutil.TempFile("/tmp", "daemon.log"); err != nil {
-			fmt.Printf("- Failed to create output log file\n")
-		}
-	} else {
-		if file, err = os.Create(d.LogFile); err != nil {
-			fmt.Printf("- Failed to create output log file\n")
-		}
-	}
-
-	if err != nil {
-		return nil, err
-	} else {
-		fmt.Printf("- redirected the output to %s\n", file.Name())
-		return file, nil
-	}
-}
-
 func (d *Daemon) parent() {
 	cmd := d.Command
+
+	cmd.SysProcAttr.Setsid = true
+	cmd.SysProcAttr.Noctty = true
 
 	if !d.Restart {
 		if file, err := d.createLogfile(); err == nil {
