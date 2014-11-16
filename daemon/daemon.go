@@ -145,6 +145,8 @@ func (d *Daemon) parent() {
 }
 
 // Start will setup the daemon environment and create pidfile if pidfile is not empty
+// Parent process will never return
+// Will return back to the worker process
 func (d *Daemon) Start() error {
 	// the signal handler is needed for both parent and child
 	// since we need to support foreground mode
