@@ -166,8 +166,8 @@ func (d *Daemon) child() {
 func (d *Daemon) parent() {
 	cmd := d.Command
 
-	cmd.SysProcAttr.Setsid = true
-	cmd.SysProcAttr.Noctty = true
+	procAttr := &syscall.SysProcAttr{Setsid: true}
+	cmd.SysProcAttr = procAttr
 
 	if !d.Restart {
 		if file, err := d.createLogfile(); err == nil {
