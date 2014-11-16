@@ -144,18 +144,18 @@ func (d *Daemon) createLogfile() (*os.File, error) {
 
 	if d.LogFile == "" {
 		if file, err = ioutil.TempFile("/tmp", "daemon.log"); err != nil {
-			fmt.Printf("Failed to create output log file\n")
+			fmt.Printf("- Failed to create output log file\n")
 		}
 	} else {
 		if file, err = os.Create(d.LogFile); err != nil {
-			fmt.Printf("Failed to create output log file\n")
+			fmt.Printf("- Failed to create output log file\n")
 		}
 	}
 
 	if err != nil {
 		return nil, err
 	} else {
-		fmt.Printf("redirected the output to %s\n", file.Name())
+		fmt.Printf("- redirected the output to %s\n", file.Name())
 		return file, nil
 	}
 }
