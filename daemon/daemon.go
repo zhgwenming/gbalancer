@@ -68,12 +68,10 @@ func (d *Daemon) Start() {
 
 	// switch to use abs pidfile, background daemon will chdir to /
 	if d.PidFile != "" {
-		if !filepath.IsAbs(d.PidFile) {
-			if p, err := filepath.Abs(d.PidFile); err != nil {
-				fatal(err)
-			} else {
-				d.PidFile = p
-			}
+		if p, err := filepath.Abs(d.PidFile); err != nil {
+			fatal(err)
+		} else {
+			d.PidFile = p
 		}
 	}
 	// as a foreground process
