@@ -7,7 +7,7 @@ package daemon
 import (
 	"fmt"
 	"github.com/zhgwenming/gbalancer/utils"
-	//"io/ioutil"
+	"io/ioutil"
 	stdlog "log"
 	"log/syslog"
 	"os"
@@ -30,6 +30,7 @@ var (
 
 type Daemon struct {
 	PidFile    string
+	LogFile    string
 	Foreground bool
 	Restart    bool
 	Signalc    chan os.Signal
@@ -95,6 +96,11 @@ func (d *Daemon) child() {
 	for {
 		cmd := d.Command
 
+		if file, err := d.createLogfile(); err == nil {
+			cmd.Stdout = file
+			cmd.Stderr = file
+		}
+
 		startTime := time.Now()
 		if err := cmd.Start(); err == nil {
 			log.Printf("- Started worker as pid %d\n", cmd.Process.Pid)
@@ -132,8 +138,37 @@ func (d *Daemon) child() {
 	}
 }
 
+func (d *Daemon) createLogfile() (*os.File, error) {
+	var err error
+	var file *os.File
+
+	if d.LogFile == "" {
+		if file, err = ioutil.TempFile("/tmp", "daemon.log"); err != nil {
+			fmt.Printf("Failed to create output log file\n")
+		}
+	} else {
+		if file, err = os.Create(d.LogFile); err != nil {
+			fmt.Printf("Failed to create output log file\n")
+		}
+	}
+
+	if err != nil {
+		return nil, err
+	} else {
+		fmt.Printf("redirected the output to %s\n", file.Name())
+		return file, nil
+	}
+}
+
 func (d *Daemon) parent() {
 	cmd := d.Command
+
+	if !d.Restart {
+		if file, err := d.createLogfile(); err == nil {
+			cmd.Stdout = file
+			cmd.Stderr = file
+		}
+	}
 
 	if err := cmd.Start(); err == nil {
 		fmt.Printf("- Started daemon as pid %d\n", cmd.Process.Pid)
