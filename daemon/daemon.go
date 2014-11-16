@@ -16,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"syscall"
+	"time"
 )
 
 const (
@@ -32,6 +33,7 @@ type Daemon struct {
 	Foreground bool
 	Restart    bool
 	Signalc    chan os.Signal
+	Command    exec.Cmd
 }
 
 func NewDaemon() *Daemon {
@@ -67,7 +69,7 @@ func (d *Daemon) setupPidfile() {
 }
 
 func (d *Daemon) cleanPidfile() {
-	if d.PidFile != "" {
+	if d.PidFile == "" {
 		return
 	}
 
@@ -80,10 +82,57 @@ func (d *Daemon) child() {
 	os.Chdir("/")
 	syscall.Setsid()
 	d.setupPidfile()
+
+	if !d.Restart {
+		return
+	}
+
+	signal.Notify(d.Signalc,
+		syscall.SIGCHLD)
+
+	// process manager
+	for {
+		cmd := d.Command
+
+		startTime := time.Now()
+		if err := cmd.Start(); err == nil {
+			log.Printf("- Started worker as pid %d\n", cmd.Process.Pid)
+		} else {
+			log.Printf("error to start worker - %s\n", err)
+			os.Exit(1)
+		}
+
+		for sig := range d.Signalc {
+			log.Printf("monitor captured %v\n", sig)
+			if sig == syscall.SIGCHLD {
+				break
+			}
+
+			// only exit if we got a TERM signal
+			if sig == syscall.SIGTERM {
+				cmd.Process.Signal(sig)
+				os.Exit(0)
+			}
+		}
+
+		if err := cmd.Wait(); err != nil {
+			log.Printf("worker[%d] exited with - %s, restarting..\n", cmd.Process.Pid, err)
+		}
+
+		for {
+			endTime := time.Now()
+			duration := endTime.Sub(startTime)
+			if duration.Seconds() > 5 {
+				break
+			} else {
+				time.Sleep(time.Second)
+			}
+		}
+	}
 }
 
 func (d *Daemon) parent() {
-	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+	cmd := d.Command
 
 	if err := cmd.Start(); err == nil {
 		fmt.Printf("- Started daemon as pid %d\n", cmd.Process.Pid)
@@ -124,17 +173,48 @@ func (d *Daemon) Start() error {
 		return nil
 	}
 
-	// background process, all the magic goes here
-	if _, child := syscall.Getenv(DAEMON_ENV); child {
-		syscall.Unsetenv(DAEMON_ENV)
-		d.child()
+	if p, err := filepath.Abs(os.Args[0]); err != nil {
+		fatal(err)
 	} else {
-		err := syscall.Setenv(DAEMON_ENV, "")
-		if err != nil {
-			fmt.Print(err)
-			os.Exit(1)
+		d.Command = exec.Cmd{
+			Path: p,
+			Args: os.Args,
 		}
-		d.parent()
+	}
+
+	// parent/child/worker logic
+	// background monitor/worker process, all the magic goes here
+	mode := os.Getenv(DAEMON_ENV)
+
+	switch mode {
+	case "":
+		err := os.Setenv(DAEMON_ENV, "child")
+		if err != nil {
+			fatal(err)
+		}
+		d.parent()                           // fork and exit
+		log.Fatal("BUG, parent didn't exit") //should never get here
+	case "child":
+		err := os.Setenv(DAEMON_ENV, "worker")
+		if err != nil {
+			fatal(err)
+		}
+
+		d.child()
+
+		err = os.Unsetenv(DAEMON_ENV)
+		if err != nil {
+			fatal(err)
+		}
+		return nil // return back to main or loop fork/monitor
+	case "worker":
+		err := os.Unsetenv(DAEMON_ENV)
+		if err != nil {
+			fatal(err)
+		}
+		return nil // return back to main
+	default:
+		log.Printf("error mode: %s", mode)
 	}
 
 	return nil
@@ -161,6 +241,7 @@ func (d *Daemon) WaitSignal(cleanup func()) {
 func Start(pidfile string, foreground bool) error {
 	DefaultDaemon.PidFile = pidfile
 	DefaultDaemon.Foreground = foreground
+	DefaultDaemon.Restart = !foreground
 	return DefaultDaemon.Start()
 }
 
