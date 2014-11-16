@@ -56,24 +56,48 @@ func fatal(err error) {
 }
 
 func (d *Daemon) setupPidfile() {
-	if d.PidFile != "" {
-		if err := utils.WritePid(d.PidFile); err != nil {
-			log.Printf("error: %s\n", err)
-			os.Exit(1)
-		}
+	if d.PidFile == "" {
+		return
+	}
+
+	if err := utils.WritePid(d.PidFile); err != nil {
+		log.Printf("error: %s\n", err)
+		os.Exit(1)
 	}
 }
 
 func (d *Daemon) cleanPidfile() {
 	if d.PidFile != "" {
-		if err := os.Remove(d.PidFile); err != nil {
-			log.Printf("error to remove pidfile %s:", err)
-		}
+		return
+	}
+
+	if err := os.Remove(d.PidFile); err != nil {
+		log.Printf("error to remove pidfile %s:", err)
+	}
+}
+
+func (d *Daemon) child() {
+	os.Chdir("/")
+	syscall.Setsid()
+	d.setupPidfile()
+}
+
+func (d *Daemon) parent() {
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+
+	if err = cmd.Start(); err == nil {
+		fmt.Printf("- Started daemon as pid %d\n", cmd.Process.Pid)
+		os.Exit(0)
+	} else {
+		fmt.Printf("error to run in daemon mode - %s\n", err)
+		os.Exit(1)
 	}
 }
 
 // Start will setup the daemon environment and create pidfile if pidfile is not empty
 func (d *Daemon) Start() error {
+	// the signal handler is needed for both parent and child
+	// since we need to support foreground mode
 	signal.Notify(d.Signalc,
 		syscall.SIGHUP,
 		syscall.SIGINT,
@@ -103,27 +127,14 @@ func (d *Daemon) Start() error {
 	// background process, all the magic goes here
 	if _, child := syscall.Getenv(DAEMON_ENV); child {
 		syscall.Unsetenv(DAEMON_ENV)
-		os.Chdir("/")
-		syscall.Setsid()
-
-		d.setupPidfile()
-
+		d.child()
 	} else {
 		err := syscall.Setenv(DAEMON_ENV, "")
 		if err != nil {
 			fmt.Print(err)
 			os.Exit(1)
 		}
-
-		cmd := exec.Command(os.Args[0], os.Args[1:]...)
-
-		if err = cmd.Start(); err == nil {
-			fmt.Printf("- Started daemon as pid %d\n", cmd.Process.Pid)
-			os.Exit(0)
-		} else {
-			fmt.Printf("error to run in daemon mode - %s\n", err)
-			os.Exit(1)
-		}
+		d.parent()
 	}
 
 	return nil
