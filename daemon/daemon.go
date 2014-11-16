@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"syscall"
 )
@@ -72,26 +73,31 @@ func (d *Daemon) cleanPidfile() {
 }
 
 // Start will setup the daemon environment and create pidfile if pidfile is not empty
-func (d *Daemon) Start() {
+func (d *Daemon) Start() error {
 	signal.Notify(d.Signalc,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGQUIT,
 		syscall.SIGTERM)
 
-	// switch to use abs pidfile, background daemon will chdir to /
 	if d.PidFile != "" {
+		if _, err := os.Stat(path.Dir(d.PidFile)); os.IsNotExist(err) {
+			return err
+		}
+
+		// switch to use abs pidfile, background daemon will chdir to /
 		if p, err := filepath.Abs(d.PidFile); err != nil {
 			fatal(err)
 		} else {
 			d.PidFile = p
 		}
 	}
+
 	// as a foreground process
 	if d.Foreground {
 		fmt.Printf("- Running as foreground process\n")
 		d.setupPidfile()
-		return
+		return nil
 	}
 
 	// background process, all the magic goes here
@@ -119,6 +125,8 @@ func (d *Daemon) Start() {
 			os.Exit(1)
 		}
 	}
+
+	return nil
 }
 
 func (d *Daemon) WaitSignal(cleanup func()) {
@@ -139,10 +147,10 @@ func (d *Daemon) WaitSignal(cleanup func()) {
 	return
 }
 
-func Start(pidfile string, foreground bool) {
+func Start(pidfile string, foreground bool) error {
 	DefaultDaemon.PidFile = pidfile
 	DefaultDaemon.Foreground = foreground
-	DefaultDaemon.Start()
+	return DefaultDaemon.Start()
 }
 
 func WaitSignal(cleanup func()) {
