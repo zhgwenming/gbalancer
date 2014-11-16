@@ -124,8 +124,11 @@ func (d *Daemon) child() {
 		cmd := d.Command
 
 		if file, err := d.createLogfile(); err == nil {
+			log.Printf("- redirected the output to %s\n", file.Name())
 			cmd.Stdout = file
 			cmd.Stderr = file
+		} else {
+			log.Printf("create log file error: %s", err)
 		}
 
 		startTime := time.Now()
@@ -173,6 +176,7 @@ func (d *Daemon) parent() {
 
 	if !d.Restart {
 		if file, err := d.createLogfile(); err == nil {
+			fmt.Printf("- redirected the output to %s\n", file.Name())
 			cmd.Stdout = file
 			cmd.Stderr = file
 		}
