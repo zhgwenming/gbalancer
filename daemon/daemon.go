@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"github.com/zhgwenming/gbalancer/utils"
 	//"io/ioutil"
+	stdlog "log"
+	"log/syslog"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -21,6 +23,7 @@ const (
 
 var (
 	DefaultDaemon = NewDaemon()
+	log           = NewLogger()
 )
 
 type Daemon struct {
@@ -36,15 +39,25 @@ func NewDaemon() *Daemon {
 	return d
 }
 
+func NewLogger() (l *stdlog.Logger) {
+	// try to use syslog first
+	if logger, err := syslog.NewLogger(syslog.LOG_NOTICE, 0); err != nil {
+		l = stdlog.New(os.Stderr, "", stdlog.LstdFlags)
+	} else {
+		l = logger
+	}
+	return
+}
+
 func fatal(err error) {
-	fmt.Printf("error: %s\n", err)
+	log.Printf("error: %s\n", err)
 	os.Exit(1)
 }
 
 func (d *Daemon) setupPidfile() {
 	if d.PidFile != "" {
 		if err := utils.WritePid(d.PidFile); err != nil {
-			fmt.Printf("error: %s\n", err)
+			log.Printf("error: %s\n", err)
 			os.Exit(1)
 		}
 	}
@@ -53,7 +66,7 @@ func (d *Daemon) setupPidfile() {
 func (d *Daemon) cleanPidfile() {
 	if d.PidFile != "" {
 		if err := os.Remove(d.PidFile); err != nil {
-			fmt.Printf("error to remove pidfile %s:", err)
+			log.Printf("error to remove pidfile %s:", err)
 		}
 	}
 }
@@ -97,8 +110,6 @@ func (d *Daemon) Start() {
 		}
 
 		cmd := exec.Command(os.Args[0], os.Args[1:]...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
 
 		if err = cmd.Start(); err == nil {
 			fmt.Printf("- Started daemon as pid %d\n", cmd.Process.Pid)
@@ -113,7 +124,7 @@ func (d *Daemon) Start() {
 func (d *Daemon) WaitSignal(cleanup func()) {
 	// waiting for exit signals
 	for sig := range d.Signalc {
-		fmt.Printf("captured %v, exiting..\n", sig)
+		log.Printf("captured %v, exiting..\n", sig)
 		// exit if we get any signal
 		// Todo - catch signal other than SIGTERM/SIGINT
 		break
