@@ -78,6 +78,7 @@ func (d *Daemon) cleanPidfile() {
 	}
 }
 
+// monitor or the worker process
 func (d *Daemon) child() {
 	os.Chdir("/")
 	syscall.Setsid()
@@ -238,10 +239,13 @@ func (d *Daemon) WaitSignal(cleanup func()) {
 	return
 }
 
+func SetRestart() {
+	DefaultDaemon.Restart = true
+}
+
 func Start(pidfile string, foreground bool) error {
 	DefaultDaemon.PidFile = pidfile
 	DefaultDaemon.Foreground = foreground
-	DefaultDaemon.Restart = !foreground
 	return DefaultDaemon.Start()
 }
 
