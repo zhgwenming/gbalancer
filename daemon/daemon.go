@@ -85,7 +85,7 @@ func (d *Daemon) child() {
 func (d *Daemon) parent() {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 
-	if err = cmd.Start(); err == nil {
+	if err := cmd.Start(); err == nil {
 		fmt.Printf("- Started daemon as pid %d\n", cmd.Process.Pid)
 		os.Exit(0)
 	} else {
