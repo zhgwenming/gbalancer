@@ -89,7 +89,7 @@ func (d *Daemon) createLogfile() (*os.File, error) {
 	var file *os.File
 
 	if d.LogFile == "" {
-		logfile := "/tmp/" + os.Args[0] + ".log"
+		logfile := "/tmp/" + path.Base(os.Args[0]) + ".log"
 		if file, err = openLog(logfile); err != nil {
 			fmt.Printf("- Failed to create output log file\n")
 		}
