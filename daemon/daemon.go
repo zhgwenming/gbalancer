@@ -9,7 +9,6 @@ package daemon
 import (
 	"fmt"
 	"github.com/zhgwenming/gbalancer/utils"
-	"io/ioutil"
 	stdlog "log"
 	"log/syslog"
 	"os"
@@ -81,16 +80,21 @@ func (d *Daemon) cleanPidfile() {
 	}
 }
 
+func openLog(name string) (*os.File, error) {
+	return os.OpenFile(name, os.O_APPEND|os.O_CREATE, 0666)
+}
+
 func (d *Daemon) createLogfile() (*os.File, error) {
 	var err error
 	var file *os.File
 
 	if d.LogFile == "" {
-		if file, err = ioutil.TempFile("/tmp", "daemon.log"); err != nil {
+		logfile := "/tmp/" + os.Args[0] + ".log"
+		if file, err = openLog(logfile); err != nil {
 			fmt.Printf("- Failed to create output log file\n")
 		}
 	} else {
-		if file, err = os.Create(d.LogFile); err != nil {
+		if file, err = openLog(d.LogFile); err != nil {
 			fmt.Printf("- Failed to create output log file\n")
 		}
 	}
