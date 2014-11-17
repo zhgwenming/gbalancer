@@ -17,7 +17,6 @@ import (
 	"path"
 	"path/filepath"
 	"syscall"
-	"time"
 )
 
 const (
@@ -33,7 +32,6 @@ type Daemon struct {
 	PidFile    string
 	LogFile    string
 	Foreground bool
-	Restart    bool
 	Signalc    chan os.Signal
 	Command    exec.Cmd
 }
@@ -115,56 +113,6 @@ func (d *Daemon) child() {
 	//syscall.Setsid()
 
 	d.setupPidfile()
-
-	if !d.Restart {
-		return
-	}
-
-	signal.Notify(d.Signalc,
-		syscall.SIGCHLD)
-
-	// process manager
-	for {
-		cmd := d.Command
-
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-
-		startTime := time.Now()
-		if err := cmd.Start(); err == nil {
-			log.Printf("- Started worker as pid %d\n", cmd.Process.Pid)
-		} else {
-			log.Printf("error to start worker - %s\n", err)
-			os.Exit(1)
-		}
-
-		for sig := range d.Signalc {
-			log.Printf("monitor captured %v\n", sig)
-			if sig == syscall.SIGCHLD {
-				break
-			}
-
-			// only exit if we got a TERM signal
-			if sig == syscall.SIGTERM {
-				cmd.Process.Signal(sig)
-				os.Exit(0)
-			}
-		}
-
-		if err := cmd.Wait(); err != nil {
-			log.Printf("worker[%d] exited with - %s, restarting..\n", cmd.Process.Pid, err)
-		}
-
-		for {
-			endTime := time.Now()
-			duration := endTime.Sub(startTime)
-			if duration.Seconds() > 5 {
-				break
-			} else {
-				time.Sleep(time.Second)
-			}
-		}
-	}
 }
 
 func (d *Daemon) parent() {
@@ -239,27 +187,15 @@ func (d *Daemon) Start() error {
 		if err != nil {
 			fatal(err)
 		}
+
 		d.parent()                           // fork and exit
 		log.Fatal("BUG, parent didn't exit") //should never get here
 	case "child":
-		err := os.Setenv(DAEMON_ENV, "worker")
-		if err != nil {
+		if err := os.Unsetenv(DAEMON_ENV); err != nil {
 			fatal(err)
 		}
 
 		d.child()
-
-		err = os.Unsetenv(DAEMON_ENV)
-		if err != nil {
-			fatal(err)
-		}
-		return nil // return back to main or loop fork/monitor
-	case "worker":
-		err := os.Unsetenv(DAEMON_ENV)
-		if err != nil {
-			fatal(err)
-		}
-		return nil // return back to main
 	default:
 		err := fmt.Errorf("critical error, unknown mode: %s", mode)
 		fmt.Println(err)
@@ -288,16 +224,12 @@ func (d *Daemon) WaitSignal(cleanup func()) {
 	return
 }
 
-func SetRestart() {
-	DefaultDaemon.Restart = true
-}
-
-func Start(pidfile string, foreground bool) error {
+func StartDaemon(pidfile string, foreground bool) error {
 	DefaultDaemon.PidFile = pidfile
 	DefaultDaemon.Foreground = foreground
 	return DefaultDaemon.Start()
 }
 
-func WaitSignal(cleanup func()) {
+func DaemonWait(cleanup func()) {
 	DefaultDaemon.WaitSignal(cleanup)
 }
