@@ -268,7 +268,10 @@ func (d *Daemon) Start() error {
 		}
 		return nil // return back to main
 	default:
-		log.Printf("error mode: %s", mode)
+		err := fmt.Errorf("critical error, unknown mode: %s", mode)
+		fmt.Println(err)
+		log.Println(err)
+		os.Exit(1)
 	}
 
 	return nil
