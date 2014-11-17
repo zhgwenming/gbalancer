@@ -100,7 +100,6 @@ func (d *Daemon) createLogfile() (*os.File, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		fmt.Printf("- redirected the output to %s\n", file.Name())
 		return file, nil
 	}
 }
