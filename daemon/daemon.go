@@ -127,13 +127,8 @@ func (d *Daemon) child() {
 	for {
 		cmd := d.Command
 
-		if file, err := d.createLogfile(); err == nil {
-			log.Printf("- redirected the output to %s\n", file.Name())
-			cmd.Stdout = file
-			cmd.Stderr = file
-		} else {
-			log.Printf("create log file error: %s", err)
-		}
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
 		startTime := time.Now()
 		if err := cmd.Start(); err == nil {
@@ -178,12 +173,10 @@ func (d *Daemon) parent() {
 	procAttr := &syscall.SysProcAttr{Setsid: true}
 	cmd.SysProcAttr = procAttr
 
-	if !d.Restart {
-		if file, err := d.createLogfile(); err == nil {
-			fmt.Printf("- redirected the output to %s\n", file.Name())
-			cmd.Stdout = file
-			cmd.Stderr = file
-		}
+	if file, err := d.createLogfile(); err == nil {
+		fmt.Printf("- redirected the output to %s\n", file.Name())
+		cmd.Stdout = file
+		cmd.Stderr = file
 	}
 
 	if err := cmd.Start(); err == nil {
