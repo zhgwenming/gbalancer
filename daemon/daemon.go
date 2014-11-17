@@ -81,7 +81,7 @@ func (d *Daemon) cleanPidfile() {
 }
 
 func openLog(name string) (*os.File, error) {
-	return os.OpenFile(name, os.O_APPEND|os.O_CREATE, 0666)
+	return os.OpenFile(name, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 }
 
 func (d *Daemon) createLogfile() (*os.File, error) {
