@@ -84,20 +84,21 @@ func (s *Supervisor) supervise() {
 }
 
 func (s *Supervisor) Start() error {
-	if err := s.Daemon.Start(); err != nil {
-		return err
-	}
-
-	// as a foreground process
-	if s.Foreground {
-		return nil
-	}
-
-	// we should be session leader here
 	mode := os.Getenv(ENV_SUPERVISOR)
 
 	switch mode {
 	case "":
+		if err := s.Daemon.Start(); err != nil {
+			return err
+		}
+
+		// as a foreground process, but give daemon a chance to
+		// setup signal/pid related things
+		if s.Foreground {
+			return nil
+		}
+
+		// we should be session leader here
 		if err := os.Setenv(ENV_SUPERVISOR, "worker"); err != nil {
 			fatal(err)
 		}
