@@ -34,6 +34,7 @@ type Daemon struct {
 	Foreground bool
 	Signalc    chan os.Signal
 	Command    exec.Cmd
+	Handler    func()
 }
 
 func NewDaemon() *Daemon {
