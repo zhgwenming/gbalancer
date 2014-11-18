@@ -30,13 +30,18 @@ var (
 	log           = NewLogger()
 )
 
+type Handler interface {
+	Start()
+	Stop()
+}
+
 type Daemon struct {
 	PidFile    string
 	LogFile    string
 	Foreground bool
 	Signalc    chan os.Signal
 	Command    exec.Cmd
-	Handler    func()
+	h          Handler
 }
 
 func NewDaemon() *Daemon {
