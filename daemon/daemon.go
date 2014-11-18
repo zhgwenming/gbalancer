@@ -188,7 +188,7 @@ func (d *Daemon) RunOnce(handler func()) error {
 // Start will setup the daemon environment and create pidfile if pidfile is not empty
 // Parent process will never return
 // Will return back to the worker process
-func (d *Daemon) Start() error {
+func (d *Daemon) Sink() error {
 	// the signal handler is needed for both parent and child
 	// since we need to support foreground mode
 	signal.Notify(d.Signalc,
@@ -276,7 +276,7 @@ func (d *Daemon) WaitSignal(cleanup func()) {
 func StartDaemon(pidfile string, foreground bool) error {
 	DefaultDaemon.PidFile = pidfile
 	DefaultDaemon.Foreground = foreground
-	return DefaultDaemon.Start()
+	return DefaultDaemon.Sink()
 }
 
 func DaemonWait(cleanup func()) {
