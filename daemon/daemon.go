@@ -31,7 +31,7 @@ var (
 )
 
 type Handler interface {
-	Start()
+	Serve()
 	Stop()
 }
 
@@ -271,6 +271,32 @@ func (d *Daemon) WaitSignal(cleanup func()) {
 
 	d.cleanPidfile()
 	return
+}
+
+type HandlerFunc func()
+
+func (h HandlerFunc) Serve() {
+	h()
+}
+
+func (h HandlerFunc) Stop() {
+	return
+}
+
+func (d *Daemon) Handle(h Handler) {
+	d.h = h
+}
+
+func (d *Daemon) HandleFunc(f func()) {
+	d.h = HandlerFunc(f)
+}
+
+func DaemonHandle(h Handler) {
+	DefaultDaemon.h = h
+}
+
+func DaemonHandleFunc(f func()) {
+	DefaultDaemon.h = HandlerFunc(f)
 }
 
 func DaemonSink(pidfile string, foreground bool) error {
