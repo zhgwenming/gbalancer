@@ -273,7 +273,7 @@ func (d *Daemon) WaitSignal(cleanup func()) {
 	return
 }
 
-func StartDaemon(pidfile string, foreground bool) error {
+func DaemonSink(pidfile string, foreground bool) error {
 	DefaultDaemon.PidFile = pidfile
 	DefaultDaemon.Foreground = foreground
 	return DefaultDaemon.Sink()

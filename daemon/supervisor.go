@@ -118,12 +118,12 @@ func (s *Supervisor) Start() error {
 	return nil
 }
 
-func StartSupervisor(pidfile string, foreground bool) error {
+func Sink(pidfile string, foreground bool) error {
 	DefaultSupervisor.PidFile = pidfile
 	DefaultSupervisor.Foreground = foreground
 	return DefaultSupervisor.Start()
 }
 
-func SupervisorWait(cleanup func()) {
+func ExitWait(cleanup func()) {
 	DefaultSupervisor.WaitSignal(cleanup)
 }
