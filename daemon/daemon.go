@@ -16,7 +16,9 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"runtime/debug"
 	"syscall"
+	"time"
 )
 
 const (
@@ -134,6 +136,46 @@ func (d *Daemon) parent() {
 		fmt.Printf("error to run in daemon mode - %s\n", err)
 		os.Exit(1)
 	}
+}
+
+// RunWait will run the specified function in safe mode, it blocks the caller until it finished
+func (d *Daemon) RunWait(handler func()) error {
+	if p := recover(); p != nil {
+		log.Printf("%s\nbacktrace:\n%s", p, debug.Stack())
+	}
+	handler()
+
+	return nil
+}
+
+func (d *Daemon) runLoop(handler func()) error {
+	for {
+		startTime := time.Now()
+		d.RunWait(handler)
+		for {
+			endTime := time.Now()
+			duration := endTime.Sub(startTime)
+			if duration.Seconds() > 5 {
+				break
+			} else {
+				time.Sleep(time.Second)
+			}
+		}
+	}
+}
+
+// RunWait will run the specified function and watch over it in a separate goroutine
+// the handler will get restarted infinitely on errors, it's a nonblock method
+func (d *Daemon) Run(handler func()) error {
+	go d.runLoop(handler)
+
+	return nil
+}
+
+func (d *Daemon) RunOnce(handler func()) error {
+	go d.RunWait(handler)
+
+	return nil
 }
 
 // Start will setup the daemon environment and create pidfile if pidfile is not empty
