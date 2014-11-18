@@ -164,14 +164,16 @@ func (d *Daemon) runLoop(handler func()) error {
 	}
 }
 
-// RunWait will run the specified function and watch over it in a separate goroutine
-// the handler will get restarted infinitely on errors, it's a nonblock method
-func (d *Daemon) Run(handler func()) error {
+// RunForever returns imediately to the caller and run the specified function
+// in background, it watches over the requested function in a separate
+// goroutine, the function will get restarted infinitely on errors.
+func (d *Daemon) RunForever(handler func()) error {
 	go d.runLoop(handler)
 
 	return nil
 }
 
+// RunForever returns imediately to the caller and run the specified function in background
 func (d *Daemon) RunOnce(handler func()) error {
 	go d.RunWait(handler)
 
