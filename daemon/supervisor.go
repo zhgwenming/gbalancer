@@ -118,20 +118,16 @@ func (s *Supervisor) Start() error {
 	return nil
 }
 
-func Sink(pidfile string, foreground bool) error {
-	DefaultSupervisor.PidFile = pidfile
-	DefaultSupervisor.Foreground = foreground
-	return DefaultSupervisor.Start()
-}
-
-func Wait(cleanup func()) {
-	DefaultSupervisor.WaitSignal(cleanup)
-}
-
 func Handle(h Handler) {
 	DefaultSupervisor.h = h
 }
 
 func HandleFunc(f func()) {
 	DefaultSupervisor.h = HandlerFunc(f)
+}
+
+func Start(pidfile string, foreground bool) error {
+	DefaultSupervisor.PidFile = pidfile
+	DefaultSupervisor.Foreground = foreground
+	return DefaultSupervisor.Start()
 }
