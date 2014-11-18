@@ -83,7 +83,7 @@ func (s *Supervisor) supervise() {
 	}
 }
 
-func (s *Supervisor) Start() error {
+func (s *Supervisor) Sink() error {
 	mode := os.Getenv(ENV_SUPERVISOR)
 
 	switch mode {
@@ -114,6 +114,20 @@ func (s *Supervisor) Start() error {
 		log.Println(err)
 		os.Exit(1)
 	}
+
+	return nil
+}
+
+func (s *Supervisor) Start() error {
+	if err := s.Sink(); err != nil {
+		return err
+	}
+
+	// handler serve
+	s.h.Serve()
+
+	// wait to exit
+	s.WaitSignal()
 
 	return nil
 }
