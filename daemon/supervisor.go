@@ -124,6 +124,14 @@ func Sink(pidfile string, foreground bool) error {
 	return DefaultSupervisor.Start()
 }
 
-func ExitWait(cleanup func()) {
+func Wait(cleanup func()) {
 	DefaultSupervisor.WaitSignal(cleanup)
+}
+
+func Handle(h Handler) {
+	DefaultSupervisor.h = h
+}
+
+func HandleFunc(f func()) {
+	DefaultSupervisor.h = HandlerFunc(f)
 }
