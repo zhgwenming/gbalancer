@@ -35,6 +35,22 @@ func PrintVersion() {
 	os.Exit(0)
 }
 
+type Server struct {
+	settings *config.Configuration
+	wgroup   *sync.WaitGroup
+	done     chan struct{}
+}
+
+func (s *Server) Serve() {
+	// create the service goroutine
+	s.done = engine.Serve(s.settings, s.wgroup)
+}
+
+func (s *Server) Stop() {
+	close(s.done)
+	s.wgroup.Wait()
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
@@ -52,18 +68,13 @@ func main() {
 	}
 	log.Printf(settings.ListenInfo())
 
-	if *daemonMode {
-		if err = daemon.Start(*pidFile, false); err != nil {
-			log.Fatal(err)
-		}
+	srv := &Server{settings: settings, wgroup: wgroup}
+
+	daemon.Handle(srv)
+
+	foreground := !*daemonMode
+
+	if err := daemon.Start(*pidFile, foreground); err != nil {
+		log.Fatal(err)
 	}
-
-	// create the service goroutine
-	done := engine.Serve(settings, wgroup)
-
-	// wait the exit signal then do cleanup
-	daemon.WaitSignal(func() {
-		close(done)
-		wgroup.Wait()
-	})
 }
