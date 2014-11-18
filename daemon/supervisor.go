@@ -88,7 +88,7 @@ func (s *Supervisor) Start() error {
 
 	switch mode {
 	case "":
-		if err := s.Daemon.Start(); err != nil {
+		if err := s.Daemon.Sink(); err != nil {
 			return err
 		}
 
