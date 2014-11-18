@@ -255,7 +255,7 @@ func (d *Daemon) Sink() error {
 	return nil
 }
 
-func (d *Daemon) WaitSignal(cleanup func()) {
+func (d *Daemon) WaitSignal() {
 	// waiting for exit signals
 	for sig := range d.Signalc {
 		log.Printf("captured %v, exiting..\n", sig)
@@ -264,10 +264,7 @@ func (d *Daemon) WaitSignal(cleanup func()) {
 		break
 	}
 
-	// only run hook if it's specified
-	if cleanup != nil {
-		cleanup()
-	}
+	d.h.Stop()
 
 	d.cleanPidfile()
 	return
@@ -291,6 +288,15 @@ func (d *Daemon) HandleFunc(f func()) {
 	d.h = HandlerFunc(f)
 }
 
+func (d *Daemon) Start() error {
+	if err := d.Sink(); err != nil {
+		return err
+	}
+
+	d.WaitSignal()
+	return nil
+}
+
 func DaemonHandle(h Handler) {
 	DefaultDaemon.h = h
 }
@@ -299,12 +305,8 @@ func DaemonHandleFunc(f func()) {
 	DefaultDaemon.h = HandlerFunc(f)
 }
 
-func DaemonSink(pidfile string, foreground bool) error {
+func DaemonStart(pidfile string, foreground bool) error {
 	DefaultDaemon.PidFile = pidfile
 	DefaultDaemon.Foreground = foreground
-	return DefaultDaemon.Sink()
-}
-
-func DaemonWait(cleanup func()) {
-	DefaultDaemon.WaitSignal(cleanup)
+	return DefaultDaemon.Start()
 }
