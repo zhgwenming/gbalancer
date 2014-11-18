@@ -264,6 +264,7 @@ func (d *Daemon) WaitSignal() {
 		break
 	}
 
+	// handler stop routine
 	d.h.Stop()
 
 	d.cleanPidfile()
@@ -293,6 +294,10 @@ func (d *Daemon) Start() error {
 		return err
 	}
 
+	// handler serve
+	d.h.Serve()
+
+	// wait to exit
 	d.WaitSignal()
 	return nil
 }
