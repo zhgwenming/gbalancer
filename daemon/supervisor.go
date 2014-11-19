@@ -119,21 +119,7 @@ func (s *Supervisor) Sink() error {
 }
 
 func (s *Supervisor) Start() error {
-	if s.h == nil {
-		return fmt.Errorf("Handler should be specified first")
-	}
-
-	if err := s.Sink(); err != nil {
-		return err
-	}
-
-	// handler serve
-	s.h.Serve()
-
-	// wait to exit
-	s.WaitSignal()
-
-	return nil
+	return start(s)
 }
 
 func Handle(h Handler) {

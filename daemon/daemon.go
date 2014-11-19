@@ -189,6 +189,10 @@ func (d *Daemon) RunOnce(handler func()) error {
 // Parent process will never return
 // Will return back to the worker process
 func (d *Daemon) Sink() error {
+	if d.h == nil {
+		return fmt.Errorf("Handler should be specified first")
+	}
+
 	// the signal handler is needed for both parent and child
 	// since we need to support foreground mode
 	signal.Notify(d.Signalc,
@@ -255,6 +259,11 @@ func (d *Daemon) Sink() error {
 	return nil
 }
 
+func (d *Daemon) Serve() {
+	// handler serve
+	d.h.Serve()
+}
+
 func (d *Daemon) WaitSignal() {
 	// waiting for exit signals
 	for sig := range d.Signalc {
@@ -289,21 +298,29 @@ func (d *Daemon) HandleFunc(f func()) {
 	d.h = HandlerFunc(f)
 }
 
-func (d *Daemon) Start() error {
-	if d.h == nil {
-		return fmt.Errorf("Handler should be specified first")
-	}
+type sinker interface {
+	Sink() error
+	Serve()
+	WaitSignal()
+}
 
-	if err := d.Sink(); err != nil {
+// a function calls different sink functions
+func start(s sinker) error {
+
+	if err := s.Sink(); err != nil {
 		return err
 	}
 
 	// handler serve
-	d.h.Serve()
+	s.Serve()
 
 	// wait to exit
-	d.WaitSignal()
+	s.WaitSignal()
 	return nil
+}
+
+func (d *Daemon) Start() error {
+	return start(d)
 }
 
 func DaemonHandle(h Handler) {
