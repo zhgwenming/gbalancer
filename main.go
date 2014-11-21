@@ -70,11 +70,10 @@ func main() {
 
 	srv := &Server{settings: settings, wgroup: wgroup}
 
-	daemon.Handle(srv)
-
 	foreground := !*daemonMode
+	n := nestor.Handle(*pidFile, foreground, srv)
 
-	if err := daemon.Start(*pidFile, foreground); err != nil {
+	if err := nestor.Start(n); err != nil {
 		log.Fatal(err)
 	}
 }
