@@ -3,7 +3,6 @@ package main
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -28,8 +27,7 @@ var configTemplate = []byte(`
 func TestMain(t *testing.T) {
 	ioutil.WriteFile(cfgFile, configTemplate, 0600)
 
-	cfg := filepath.Join(filepath.Dir(os.Args[0]), "gbalancer.json")
-	args := []string{"-config", cfg}
+	args := []string{"-config", cfgFile}
 	os.Args = append(os.Args, args...)
 	main()
 }
