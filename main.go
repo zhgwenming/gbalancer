@@ -60,9 +60,11 @@ func main() {
 		PrintVersion()
 	}
 
-	if err := config.CheckFile(*configFile); err != nil {
-		fmt.Println(err)
-		log.Fatal(err)
+	if *daemonMode {
+		if err := config.CheckFile(*configFile); err != nil {
+			fmt.Println(err)
+			log.Fatal(err)
+		}
 	}
 
 	// Load configurations
