@@ -35,16 +35,20 @@ func start() {
 }
 
 func startHTTP(port string) {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "hello\n")
 	})
 
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatal("ListenAndServer:", err)
 	}
 }
 
 func TestMain(t *testing.T) {
-	go startHTTP("9001")
+	for _, port := range []string{"9001", "9002", "9003"} {
+		go startHTTP(port)
+	}
 	start()
 }
