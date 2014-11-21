@@ -1,7 +1,9 @@
 package main
 
 import (
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"testing"
 )
@@ -32,6 +34,17 @@ func start() {
 	main()
 }
 
+func startHTTP(port string) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "hello\n")
+	})
+
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal("ListenAndServer:", err)
+	}
+}
+
 func TestMain(t *testing.T) {
+	go startHTTP("9001")
 	start()
 }
