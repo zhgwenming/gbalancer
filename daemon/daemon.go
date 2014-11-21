@@ -2,9 +2,7 @@
 // Use of this source code is governed by a GPLv3
 // Author: Wenming Zhang <zhgwenming@gmail.com>
 
-// +build go1.4
-
-package daemon
+package nestor
 
 import (
 	"fmt"
@@ -22,7 +20,7 @@ import (
 )
 
 const (
-	DAEMON_ENV = "__GO_DAEMON_MODE"
+	ENV_DAEMON = "__GO_DAEMON_MODE"
 )
 
 var (
@@ -36,17 +34,19 @@ type Handler interface {
 }
 
 type Daemon struct {
-	PidFile    string
-	LogFile    string
-	Foreground bool
-	Signalc    chan os.Signal
-	Command    exec.Cmd
-	h          Handler
+	PidFile     string
+	Foreground  bool
+	Signalc     chan os.Signal
+	Command     exec.Cmd
+	WaitSeconds time.Duration
+	Log         logFile
+	h           Handler
 }
 
 func NewDaemon() *Daemon {
-	d := &Daemon{}
+	d := &Daemon{WaitSeconds: time.Second}
 	d.Signalc = make(chan os.Signal, 1)
+
 	return d
 }
 
@@ -86,29 +86,22 @@ func (d *Daemon) cleanPidfile() {
 	}
 }
 
-func openLog(name string) (*os.File, error) {
-	return os.OpenFile(name, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
-}
-
 func (d *Daemon) createLogfile() (*os.File, error) {
 	var err error
-	var file *os.File
 
-	if d.LogFile == "" {
+	if d.Log.path == "" {
 		logfile := "/tmp/" + path.Base(os.Args[0]) + ".log"
-		if file, err = openLog(logfile); err != nil {
-			fmt.Printf("- Failed to create output log file\n")
-		}
-	} else {
-		if file, err = openLog(d.LogFile); err != nil {
-			fmt.Printf("- Failed to create output log file\n")
-		}
+		d.Log.path = logfile
+	}
+
+	if err = d.Log.Open(); err != nil {
+		fmt.Printf("- Failed to create output log file - %s: %s\n", d.Log.path, err)
 	}
 
 	if err != nil {
 		return nil, err
 	} else {
-		return file, nil
+		return d.Log.file, nil
 	}
 }
 
@@ -123,6 +116,9 @@ func (d *Daemon) child() {
 }
 
 func (d *Daemon) parent() {
+	signal.Notify(d.Signalc,
+		syscall.SIGCHLD)
+
 	cmd := d.Command
 
 	procAttr := &syscall.SysProcAttr{Setsid: true}
@@ -136,6 +132,16 @@ func (d *Daemon) parent() {
 
 	if err := cmd.Start(); err == nil {
 		fmt.Printf("- Started daemon as pid %d\n", cmd.Process.Pid)
+		select {
+		case <-time.After(time.Second / 5):
+		case sig := <-d.Signalc:
+			if sig == syscall.SIGCHLD {
+				if err := cmd.Wait(); err != nil {
+					fmt.Printf("- daemon exited with %s\n", err)
+					d.Log.Dump(os.Stderr)
+				}
+			}
+		}
 		os.Exit(0)
 	} else {
 		fmt.Printf("error to run in daemon mode - %s\n", err)
@@ -189,6 +195,10 @@ func (d *Daemon) RunOnce(handler func()) error {
 // Parent process will never return
 // Will return back to the worker process
 func (d *Daemon) Sink() error {
+	if d.h == nil {
+		return fmt.Errorf("Handler should be specified first")
+	}
+
 	// the signal handler is needed for both parent and child
 	// since we need to support foreground mode
 	signal.Notify(d.Signalc,
@@ -228,11 +238,11 @@ func (d *Daemon) Sink() error {
 
 	// parent/child/worker logic
 	// background monitor/worker process, all the magic goes here
-	mode := os.Getenv(DAEMON_ENV)
+	mode := os.Getenv(ENV_DAEMON)
 
 	switch mode {
 	case "":
-		err := os.Setenv(DAEMON_ENV, "child")
+		err := os.Setenv(ENV_DAEMON, "child")
 		if err != nil {
 			fatal(err)
 		}
@@ -240,7 +250,7 @@ func (d *Daemon) Sink() error {
 		d.parent()                           // fork and exit
 		log.Fatal("BUG, parent didn't exit") //should never get here
 	case "child":
-		if err := os.Unsetenv(DAEMON_ENV); err != nil {
+		if err := unsetenv(ENV_DAEMON); err != nil {
 			fatal(err)
 		}
 
@@ -253,6 +263,11 @@ func (d *Daemon) Sink() error {
 	}
 
 	return nil
+}
+
+func (d *Daemon) Serve() {
+	// handler serve
+	d.h.Serve()
 }
 
 func (d *Daemon) WaitSignal() {
@@ -289,33 +304,35 @@ func (d *Daemon) HandleFunc(f func()) {
 	d.h = HandlerFunc(f)
 }
 
-func (d *Daemon) Start() error {
-	if d.h == nil {
-		return fmt.Errorf("Handler should be specified first")
-	}
+type SinkServer interface {
+	Sink() error
+	Serve()
+	WaitSignal()
+}
 
-	if err := d.Sink(); err != nil {
+func DaemonHandle(pidfile string, foreground bool, h Handler) SinkServer {
+	DefaultDaemon.h = h
+	DefaultDaemon.PidFile = pidfile
+	DefaultDaemon.Foreground = foreground
+	return DefaultDaemon
+}
+
+func DaemonHandleFunc(pidfile string, foreground bool, f func()) SinkServer {
+	h := HandlerFunc(f)
+	return DaemonHandle(pidfile, foreground, h)
+}
+
+// a function calls different sink functions
+func Start(s SinkServer) error {
+
+	if err := s.Sink(); err != nil {
 		return err
 	}
 
 	// handler serve
-	d.h.Serve()
+	s.Serve()
 
 	// wait to exit
-	d.WaitSignal()
+	s.WaitSignal()
 	return nil
-}
-
-func DaemonHandle(h Handler) {
-	DefaultDaemon.h = h
-}
-
-func DaemonHandleFunc(f func()) {
-	DefaultDaemon.h = HandlerFunc(f)
-}
-
-func DaemonStart(pidfile string, foreground bool) error {
-	DefaultDaemon.PidFile = pidfile
-	DefaultDaemon.Foreground = foreground
-	return DefaultDaemon.Start()
 }

@@ -1,7 +1,4 @@
-lb
-gbalancer
-galerabalancer
 *.tar.gz
 *.rpm
 .*.swp
-build/
+_build/

@@ -2,9 +2,7 @@
 // Use of this source code is governed by a GPLv3
 // Author: Wenming Zhang <zhgwenming@gmail.com>
 
-// +build go1.4
-
-package daemon
+package nestor
 
 import (
 	"fmt"
@@ -37,7 +35,6 @@ func (s *Supervisor) startWorker() {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	startTime := time.Now()
 	if err := cmd.Start(); err == nil {
 		log.Printf("- Started worker as pid %d\n", cmd.Process.Pid)
 	} else {
@@ -59,18 +56,9 @@ func (s *Supervisor) startWorker() {
 	}
 
 	if err := cmd.Wait(); err != nil {
-		log.Printf("worker[%d] exited with - %s, restarting..\n", cmd.Process.Pid, err)
+		log.Printf("worker[%d] exited with - %s\n", cmd.Process.Pid, err)
 	}
 
-	for {
-		endTime := time.Now()
-		duration := endTime.Sub(startTime)
-		if duration.Seconds() > 5 {
-			break
-		} else {
-			time.Sleep(time.Second)
-		}
-	}
 }
 
 func (s *Supervisor) supervise() {
@@ -79,7 +67,21 @@ func (s *Supervisor) supervise() {
 
 	// process manager
 	for {
+		startTime := time.Now()
 		s.startWorker()
+		for {
+			endTime := time.Now()
+			duration := endTime.Sub(startTime)
+			seconds := duration.Seconds()
+
+			// restart for every 5s
+			if seconds > 5 {
+				break
+			} else {
+				time.Sleep(time.Second)
+			}
+		}
+		log.Printf("restarting worker\n")
 	}
 }
 
@@ -105,9 +107,10 @@ func (s *Supervisor) Sink() error {
 		s.supervise()
 		log.Fatal("BUG, supervisor should loop forever") //should never get here
 	case "worker":
-		if err := os.Unsetenv(ENV_SUPERVISOR); err != nil {
+		if err := unsetenv(ENV_SUPERVISOR); err != nil {
 			fatal(err)
 		}
+
 	default:
 		err := fmt.Errorf("critical error, unknown mode: %s", mode)
 		fmt.Println(err)
@@ -118,34 +121,14 @@ func (s *Supervisor) Sink() error {
 	return nil
 }
 
-func (s *Supervisor) Start() error {
-	if s.h == nil {
-		return fmt.Errorf("Handler should be specified first")
-	}
-
-	if err := s.Sink(); err != nil {
-		return err
-	}
-
-	// handler serve
-	s.h.Serve()
-
-	// wait to exit
-	s.WaitSignal()
-
-	return nil
-}
-
-func Handle(h Handler) {
+func Handle(pidfile string, foreground bool, h Handler) SinkServer {
 	DefaultSupervisor.h = h
-}
-
-func HandleFunc(f func()) {
-	DefaultSupervisor.h = HandlerFunc(f)
-}
-
-func Start(pidfile string, foreground bool) error {
 	DefaultSupervisor.PidFile = pidfile
 	DefaultSupervisor.Foreground = foreground
-	return DefaultSupervisor.Start()
+	return DefaultSupervisor
+}
+
+func HandleFunc(pidfile string, foreground bool, f func()) SinkServer {
+	h := HandlerFunc(f)
+	return Handle(pidfile, foreground, h)
 }
