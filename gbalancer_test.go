@@ -24,10 +24,14 @@ var configTemplate = []byte(`
 }
 `)
 
-func TestMain(t *testing.T) {
+func start() {
 	ioutil.WriteFile(cfgFile, configTemplate, 0600)
 
 	args := []string{"-config", cfgFile}
 	os.Args = append(os.Args, args...)
 	main()
+}
+
+func TestMain(t *testing.T) {
+	start()
 }
