@@ -18,8 +18,8 @@ gbalancer: engine/native/*.go
 
 rhel7: galerabalancer
 
-galerabalancer: *.go
-	go build -compiler gccgo -o $@
+galerabalancer:
+	go install -compiler gccgo $(URL)/$(REPO)/cmd/gbalancer $(URL)/$(REPO)/cmd/streamd
 
 clean:
 	rm -fv build/bin/*
