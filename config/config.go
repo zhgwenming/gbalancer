@@ -8,12 +8,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 const (
 	DEFAULT_UNIX_SOCKET = "/var/lib/mysql/mysql.sock"
 )
+
+func CheckFile(cfg string) error {
+	if filepath.IsAbs(cfg) {
+		_, err := os.Stat(cfg)
+		os.IsNotExist(err)
+		return err
+	} else {
+		return fmt.Errorf("config file need to be specified with absolute path - %s", cfg)
+	}
+}
 
 func LoadConfig(configFile string) (*Configuration, error) {
 	file, err := os.Open(configFile)
