@@ -5,6 +5,7 @@ all: gbalancer
 GOPATH = $(PWD)/_build
 GOBIN = 
 export GOPATH
+VERSION = $(shell git describe)
 
 URL = github.com/zhgwenming
 REPO = gbalancer
@@ -16,7 +17,7 @@ builddir:
 	@ln -nsf $(PWD) $(URLPATH)/$(REPO)
 
 gbalancer: engine/native/*.go builddir
-	go install $(URL)/$(REPO) $(URL)/$(REPO)/cmd/streamd
+	go install -ldflags "-X main.VERSION $(VERSION)" $(URL)/$(REPO) $(URL)/$(REPO)/cmd/streamd
 
 rhel7: $(GOPATH)/bin/galerabalancer
 
