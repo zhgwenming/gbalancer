@@ -153,13 +153,17 @@ func (s *Stream) WaitTimeout(timeout time.Duration) error {
 // Close closes the stream by sending an empty data frame with the
 // finish flag set, indicating this side is finished with the stream.
 func (s *Stream) Close() error {
+	s.dataLock.Lock()
 	select {
 	case <-s.closeChan:
 		// Stream is now fully closed
 		s.conn.removeStream(s)
 	default:
-		break
+		close(s.dataChan)
+		close(s.closeChan)
 	}
+	s.dataLock.Unlock()
+
 	return s.WriteData([]byte{}, true)
 }
 
