@@ -16,8 +16,8 @@ import (
 	"sync"
 )
 
-const (
-	VERSION = "0.6.3"
+var (
+	VERSION string
 )
 
 var (

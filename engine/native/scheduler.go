@@ -147,21 +147,22 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 				}
 			}
 		case j := <-job:
-			// add to pending list
-			if len(s.pool.backends) == 0 {
-				s.pending = append(s.pending, j)
-				log.Printf("No backend available\n")
-				continue
-			}
-			//log.Println("Got a connection")
-
 			s.dispatch(j)
 		}
 
 	}
 }
 
+// dispatch or add to pending list
 func (s *Scheduler) dispatch(req *Request) {
+	// add to pending list
+	if len(s.pool.backends) == 0 {
+		s.pending = append(s.pending, req)
+		log.Printf("No backend available\n")
+		return
+	}
+	//log.Println("Got a connection")
+
 	b := heap.Pop(&s.pool).(*Backend)
 	if b.ongoing >= MaxForwardersPerBackend {
 		heap.Push(&s.pool, b)
