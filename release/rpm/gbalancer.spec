@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:		gbalancer
-Version:	0.6.4
+Version:	0.6.5
 Release:	1%{?dist}
 Summary:	gbalancer orchestration tool
 
@@ -51,6 +51,9 @@ install -D -p  build/bin/streamd %{buildroot}%{_bindir}/streamd
 %doc README.md
 
 %changelog
+* Fri Sep 27 2015 Albert Zhang <zhgwenming@gmail.com> - 0.6.5
+- fix tcp to handle network issue in sql
+
 * Fri Nov 28 2014 Albert Zhang <zhgwenming@gmail.com> - 0.6.4
 - fix mysql driver panic issue
 - fix race condition if there's no active server exist
