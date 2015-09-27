@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"net"
+	"time"
 )
 
 // This struct is exported to make the driver directly accessible.
@@ -48,6 +49,13 @@ func (d *MySQLDriver) Open(dsn string) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// SetDeadline for TCP connection in case the network connection lost due to network issues
+	err = mc.netConn.SetDeadline(time.Now().Add(mc.cfg.timeout))
+	if err != nil {
+		return nil, err
+	}
+
 	mc.buf = newBuffer(mc.netConn)
 
 	// Reading Handshake Initialization Packet
