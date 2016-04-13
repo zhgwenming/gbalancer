@@ -32,12 +32,13 @@ import (
 type Galera struct {
 	User     string
 	Pass     string
+	Timeout  string
 	Director []string // directory server, order sensitive, will use the first one by default
 }
 
-func NewGalera(user, pass string) *Galera {
+func NewGalera(user, pass, timeout string) *Galera {
 	dir := make([]string, 0, MaxBackends)
-	return &Galera{user, pass, dir}
+	return &Galera{user, pass, timeout, dir}
 }
 
 func (c *Galera) AddDirector(backend string) error {
@@ -45,7 +46,7 @@ func (c *Galera) AddDirector(backend string) error {
 	return fmt.Errorf("Error to add backend %s\n", backend)
 }
 
-func galeraProbe(user, pass, host string) (map[string]string, error) {
+func galeraProbe(user, pass, host, timeout string) (map[string]string, error) {
 	// debug purpose
 	all := false
 
@@ -55,7 +56,7 @@ func galeraProbe(user, pass, host string) (map[string]string, error) {
 	}
 
 	// user:password@tcp(db.example.com:3306)/dbname
-	dsn := user + ":" + pass + "@tcp(" + host + ")/?timeout=1s"
+	dsn := user + ":" + pass + "@tcp(" + host + ")/?timeout=" + timeout + "s"
 	//log.Printf("Probing %s\n", dsn)
 
 	db, err := sql.Open("mysql", dsn)
@@ -109,7 +110,7 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 	results := make(chan backendStatus, MaxBackends)
 
 	probe := func(user, pass, addr string) {
-		_, err := galeraProbe(c.User, c.Pass, addr)
+		_, err := galeraProbe(c.User, c.Pass, addr, c.Timeout)
 		results <- backendStatus{addr, err}
 		//if err != nil {
 		//	log.Printf("probe: %s\n", err)
@@ -117,7 +118,7 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 	}
 
 	for dirIndex, dirAddr := range c.Director {
-		status, err := galeraProbe(c.User, c.Pass, dirAddr)
+		status, err := galeraProbe(c.User, c.Pass, dirAddr, c.Timeout)
 		if err != nil {
 			log.Println(err)
 			continue
