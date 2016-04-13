@@ -265,6 +265,10 @@ func (s *Scheduler) RemoveBackend(addr string) {
 		if b.index != -1 {
 			heap.Remove(&s.pool, b.index)
 		}
+		for i := 0; i < int(b.tunnels); i++ {
+			oneTunnel := b.tunnel[i]
+			oneTunnel.Close()
+		}
 		delete(s.backends, b.address)
 	} else {
 		log.Printf("balancer: %s is not up, bug might exist!", addr)

@@ -12,14 +12,9 @@ import (
 	"strings"
 )
 
-type copyRet struct {
-	bytes int64
-	err   error
-}
-
 func streamCopy(dst io.WriteCloser, src io.Reader) {
 	io.Copy(dst, src)
-	dst.Close()
+	defer dst.Close()
 }
 
 // Tunnel Handler
