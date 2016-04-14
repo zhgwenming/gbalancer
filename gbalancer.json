@@ -4,6 +4,7 @@
     "pass": "v2efQBdw",
     "addr": "127.0.0.1",
     "port": "3307",
+    "timeout": "5",
     "listen": [
 	"unix:///tmp/mysql.sock"
     ],

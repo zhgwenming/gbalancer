@@ -24,9 +24,10 @@ func LoadConfig(configFile string) (*Configuration, error) {
 
 	decoder := json.NewDecoder(file)
 	config := &Configuration{
-		Service: "galera",
-		Addr:    "127.0.0.1",
-		Port:    "3306",
+		Service:  "galera",
+		Addr:     "127.0.0.1",
+		Port:     "3306",
+		Timeout:  "5",
 	}
 
 	err = decoder.Decode(config)
@@ -48,6 +49,7 @@ type Configuration struct {
 	Pass       string
 	Addr       string
 	Port       string
+	Timeout    string
 	Listen     []string
 	Backend    []string
 }

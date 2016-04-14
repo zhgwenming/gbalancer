@@ -30,7 +30,7 @@ func NewWrangler(config *config.Configuration, back chan<- map[string]int) *Wran
 	var hexec healthDriver
 	switch config.Service {
 	case "galera":
-		hexec = NewGalera(config.User, config.Pass)
+		hexec = NewGalera(config.User, config.Pass, config.Timeout)
 	case "tcp":
 		hexec = NewHealthTcp()
 	case "http":
