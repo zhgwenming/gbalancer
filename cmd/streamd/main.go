@@ -14,9 +14,10 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"sync"
 	"syscall"
 )
+
+const banner string = `streamd`
 
 var (
 	pidFile     = flag.String("pidfile", "", "pid file")
@@ -24,14 +25,21 @@ var (
 	serviceAddr = flag.String("to", "/var/lib/mysql/mysql.sock", "service address")
 	log         = logger.NewLogger()
 	sigChan     = make(chan os.Signal, 1)
-	wgroup      = &sync.WaitGroup{}
+	exitChan    = make(chan int, 1)
 )
 
 func init() {
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	fmt.Printf("streamd init...")
+	go func() {
+		var sig = <-sigChan
+		log.Printf("captured %v, exiting...", sig)
+		exitChan <- 1
+	}()
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 }
 
 func main() {
+	fmt.Print(banner)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	flag.Parse()
@@ -51,11 +59,13 @@ func main() {
 
 	listener, err := net.Listen("tcp", *listenAddr)
 	if err != nil {
-		fmt.Printf("Listen error: %s\n", err)
-		log.Printf("Listen error: %s", err)
+		fmt.Printf("FATAL: Listen error: %s\n", err)
+		log.Printf("FATAL: Listen error: %s", err)
 		os.Exit(1)
 	}
-
+	
+	var spdyConns = make([] *spdystream.Connection, 128)
+	
 	go func() {
 		for {
 			conn, err := listener.Accept()
@@ -64,16 +74,23 @@ func main() {
 			}
 			spdyConn, err := spdystream.NewConnection(conn, true)
 			if err != nil {
+				conn.Close()
 				log.Printf("New spdyConnection error, %s", err)
 			}
+			spdyConns = append(spdyConns, spdyConn)
 			go spdyConn.Serve(AgentStreamHandler)
 		}
 	}()
-
-	// waiting for exit signals
-	for sig := range sigChan {
-		log.Printf("captured %v, exiting..", sig)
-
-		return
+	
+	<-exitChan
+	
+	fmt.Printf("prepare close the streamd...")
+	fmt.Printf("starting clean up connections...")
+	
+	for _, spdyConn := range spdyConns {
+		if nil != spdyConn{
+			spdyConn.Close()
+		}
 	}
+	fmt.Printf("clean up connections finished!")
 }
