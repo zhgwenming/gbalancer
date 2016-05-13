@@ -55,7 +55,9 @@ func main() {
 		log.Printf("Listen error: %s", err)
 		os.Exit(1)
 	}
-
+	
+	var spdyConns = make([] *spdystream.Connection, 128)
+	
 	go func() {
 		for {
 			conn, err := listener.Accept()
@@ -64,16 +66,26 @@ func main() {
 			}
 			spdyConn, err := spdystream.NewConnection(conn, true)
 			if err != nil {
+				conn.Close()
 				log.Printf("New spdyConnection error, %s", err)
 			}
+			spdyConns = append(spdyConns, spdyConn)
 			go spdyConn.Serve(AgentStreamHandler)
 		}
 	}()
-
+	
+	fmt.Printf("prepare close the streamd...")
+	fmt.Printf("starting clean up connections...")
+	
 	// waiting for exit signals
 	for sig := range sigChan {
 		log.Printf("captured %v, exiting..", sig)
-
+		
+		for _, spdyConn := range spdyConns {
+			if nil != spdyConn{
+				spdyConn.Close()
+			}
+		}
 		return
 	}
 }
