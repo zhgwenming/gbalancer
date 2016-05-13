@@ -84,8 +84,3 @@ func CreateSpdySession(request *spdySession, ready chan<- *spdySession) {
 	}
 	ready <- request
 }
-
-func (ct *connTunnel) Close() (error) {
-	ct.conn.Close()
-	return nil
-}

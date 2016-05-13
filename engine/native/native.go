@@ -39,13 +39,6 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 		wgroup.Add(1)
 		go func() {
 			<-done
-			
-			log.Printf("starting clean up connection....")
-			//close the backends connection for spdy
-			for addr, _ := range sch.backends {
-				sch.RemoveBackend(addr)
-			}
-			
 			listener.Close()
 		}()
 
