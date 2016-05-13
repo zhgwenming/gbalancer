@@ -32,7 +32,6 @@ func init() {
 }
 
 func main() {
-	fmt.Print(banner)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	flag.Parse()
