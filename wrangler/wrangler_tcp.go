@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"time"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 type HealthTcp struct {
@@ -28,7 +29,7 @@ func (c *HealthTcp) AddDirector(backend string) error {
 func tcpProbe(addr string) error {
 	conn, err := net.DialTimeout("tcp", addr, time.Second)
 	if err != nil {
-		//log.Printf("%s\n", err)
+		//logger.GlobalLog.Printf("%s\n", err)
 		return err
 	}
 	defer conn.Close()
@@ -64,11 +65,11 @@ func (t *HealthTcp) BuildActiveBackends() (map[string]int, error) {
 		r := <-results
 		if r.err == nil {
 			backends[r.backend] = FlagUp
-			//log.Printf("host: %s\n", r.backend)
+			//logger.GlobalLog.Printf("host: %s\n", r.backend)
 		} else {
-			log.Printf("error: %s", r.err)
+			logger.GlobalLog.Printf("error: %s", r.err)
 		}
 	}
-	//log.Printf("Active server: %v\n", backends)
+	//logger.GlobalLog.Printf("Active server: %v\n", backends)
 	return backends, nil
 }
