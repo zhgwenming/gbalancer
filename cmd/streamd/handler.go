@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 type copyRet struct {
@@ -35,7 +36,7 @@ func AgentStreamHandler(stream *spdystream.Stream) {
 	//conn, err := net.Dial("tcp", "10.100.91.74:3306")
 
 	if err != nil {
-		log.Printf("Failed: %s\n", err)
+		logger.GlobalLog.Printf("Failed: %s\n", err)
 		return
 	}
 

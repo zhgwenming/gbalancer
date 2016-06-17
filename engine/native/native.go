@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	log        = logger.NewLogger()
+//	log        = logger.NewLogger()
 	tunnels    = flag.Uint("tunnels", 0, "number of tunnels per server")
 	streamPort = flag.String("streamport", "6900", "port of the remote stream server")
 	failover   = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
@@ -30,7 +30,7 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 
 	listenAddrs, err := settings.GetListenAddrs()
 	if err != nil {
-		log.Fatal(err)
+		logger.GlobalLog.Fatal(err)
 	}
 
 	for _, listenAddr := range listenAddrs {
@@ -51,7 +51,7 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 		}()
 
 		if err != nil {
-			log.Fatal(err)
+			logger.GlobalLog.Fatal(err)
 		}
 
 		// tcp/unix listener
@@ -59,15 +59,15 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 
 			for {
 				if conn, err := listener.Accept(); err == nil {
-					//log.Println("main: got a connection")
+					//logger.GlobalLog.Println("main: got a connection")
 					req := &Request{Conn: conn}
 					job <- req
 				} else {
 					if neterr, ok := err.(net.Error); ok && neterr.Temporary() {
-						log.Printf("%s\n", err)
+						logger.GlobalLog.Printf("%s\n", err)
 					} else {
 						// we should got a errClosing
-						log.Printf("stop listening for %s:%s\n", listen.Net, listen.Addr)
+						logger.GlobalLog.Printf("stop listening for %s:%s\n", listen.Net, listen.Addr)
 						wgroup.Done()
 						return
 					}
@@ -79,6 +79,6 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 
 func RecoverReport() {
 	if p := recover(); p != nil {
-		log.Printf("%s\nbacktrace:\n%s", p, debug.Stack())
+		logger.GlobalLog.Printf("%s\nbacktrace:\n%s", p, debug.Stack())
 	}
 }
