@@ -11,6 +11,7 @@ import (
 	"io"
 	"net"
 	"sort"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 type Request struct {
@@ -69,11 +70,11 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 	for {
 		select {
 		case back := <-s.done:
-			//log.Println("finishing a connection")
+			//logger.GlobalLog.Println("finishing a connection")
 			s.finish(back)
 		case backends := <-status:
 			if len(backends) == 0 {
-				log.Printf("balancer: got empty backends list")
+				logger.GlobalLog.Printf("balancer: got empty backends list")
 			}
 
 			for addr, b := range s.backends {
@@ -84,7 +85,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 					delete(backends, addr)
 					// push back backend with error in run()
 					if b.index == -1 {
-						log.Printf("balancer: bring back %s to up\n", b.address)
+						logger.GlobalLog.Printf("balancer: bring back %s to up\n", b.address)
 						heap.Push(&s.pool, s.backends[addr])
 					}
 				}
@@ -158,16 +159,16 @@ func (s *Scheduler) dispatch(req *Request) {
 	// add to pending list
 	if len(s.pool.backends) == 0 {
 		s.pending = append(s.pending, req)
-		log.Printf("No backend available\n")
+		logger.GlobalLog.Printf("No backend available\n")
 		return
 	}
-	//log.Println("Got a connection")
+	//logger.GlobalLog.Println("Got a connection")
 
 	b := heap.Pop(&s.pool).(*Backend)
 	if b.ongoing >= MaxForwardersPerBackend {
 		heap.Push(&s.pool, b)
 		req.Conn.Close()
-		log.Printf("all backend forwarders exceed %d\n", MaxForwardersPerBackend)
+		logger.GlobalLog.Printf("all backend forwarders exceed %d\n", MaxForwardersPerBackend)
 		return
 	}
 
@@ -191,7 +192,7 @@ type copyRet struct {
 
 func sockCopy(dst io.WriteCloser, src io.Reader, c chan *copyRet) {
 	n, err := io.Copy(dst, src)
-	//log.Printf("sent %d bytes to server", n)
+	//logger.GlobalLog.Printf("sent %d bytes to server", n)
 
 	// make backend read stream ended
 
@@ -217,7 +218,7 @@ func (s *Scheduler) run(req *Request) {
 	// defer srv.Close()
 
 	c := make(chan *copyRet, 2)
-	//log.Printf("splicing socks")
+	//logger.GlobalLog.Printf("splicing socks")
 	go sockCopy(req.Conn, srv, c)
 	go sockCopy(srv, req.Conn, c)
 
@@ -244,7 +245,7 @@ func (s *Scheduler) finish(req *Request) {
 		if e, ok := err.(*net.OpError); ok && e.Op == "dial" {
 			// detected the connection error
 			// keep it out of the heap and try to reschedule the job
-			log.Printf("%s, rescheduling request %v\n", err, req)
+			logger.GlobalLog.Printf("%s, rescheduling request %v\n", err, req)
 			s.dispatch(req)
 		}
 	} else {
@@ -262,13 +263,13 @@ func (s *Scheduler) finish(req *Request) {
 
 func (s *Scheduler) AddBackend(b *Backend) {
 	addr := b.address
-	log.Printf("balancer: bring up %s.\n", addr)
+	logger.GlobalLog.Printf("balancer: bring up %s.\n", addr)
 	s.backends[addr] = b
 	heap.Push(&s.pool, b)
 }
 
 func (s *Scheduler) RemoveBackend(addr string) {
-	log.Printf("balancer: take down %s.\n", addr)
+	logger.GlobalLog.Printf("balancer: take down %s.\n", addr)
 	if b, ok := s.backends[addr]; ok {
 		// the backend might be already removed from the heap
 		if b.index != -1 {
@@ -276,7 +277,7 @@ func (s *Scheduler) RemoveBackend(addr string) {
 		}
 		delete(s.backends, b.address)
 	} else {
-		log.Printf("balancer: %s is not up, bug might exist!", addr)
+		logger.GlobalLog.Printf("balancer: %s is not up, bug might exist!", addr)
 	}
 
 }
