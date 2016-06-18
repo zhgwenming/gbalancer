@@ -63,11 +63,9 @@ func (t *HealthHTTP) BuildActiveBackends() (map[string]int, error) {
 		r := <-results
 		if r.err == nil {
 			backends[r.backend] = FlagUp
-			//logger.GlobalLog.Printf("host: %s\n", r.backend)
 		} else {
 			logger.GlobalLog.Printf("http error: %s", r.err)
 		}
 	}
-	//logger.GlobalLog.Printf("Active server: %v\n", backends)
 	return backends, nil
 }

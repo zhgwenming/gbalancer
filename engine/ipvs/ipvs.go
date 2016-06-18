@@ -29,10 +29,6 @@ type IPvs struct {
 	Persist   int
 }
 
-//var (
-//	log = logger.NewLogger()
-//)
-
 func NewIPvs(addr, port, sch string, done <-chan struct{}, wgroup *sync.WaitGroup) *IPvs {
 	backends := make(map[string]string, 4)
 	return &IPvs{addr, port, sch, done, wgroup, backends, 300}
@@ -56,27 +52,6 @@ func ensureCommands(cmds []string) error {
 	}
 	return nil
 }
-
-//func getIPAddr() (addr string) {
-//	addrs, _ := net.InterfaceAddrs()
-//	for _, i := range addrs {
-//		ipnet, ok := i.(*net.IPNet)
-//
-//		if !ok {
-//			logger.GlobalLog.Fatal("assertion err: %v\n", ipnet)
-//		}
-//
-//		ip4 := ipnet.IP.To4()
-//
-//		if !ip4.IsLoopback() {
-//			addr = ip4.String()
-//			break
-//		}
-//	}
-//	logger.GlobalLog.Printf("%v", addr)
-//	return
-//}
-//
 
 func (i *IPvs) eventLoop(status <-chan map[string]int) {
 	for {

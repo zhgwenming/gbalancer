@@ -16,10 +16,6 @@ import (
 	"syscall"
 )
 
-//var (
-//	log = logger.NewLogger()
-//)
-
 func RunCommand(cmd string) error {
 	args := strings.Fields(cmd)
 	output, err := exec.Command(args[0], args[1:]...).CombinedOutput()
@@ -52,7 +48,6 @@ iface:
 			continue
 		} else {
 			for _, ipaddr := range addrs {
-				//logger.GlobalLog.Printf("%v", ipaddr)
 				ipnet, ok := ipaddr.(*net.IPNet)
 
 				if !ok {
@@ -63,7 +58,6 @@ iface:
 				if ip4 == nil {
 					continue
 				}
-				//logger.GlobalLog.Printf("%v", ip4)
 
 				if !ip4.IsLoopback() {
 					addr = ip4.String()
@@ -93,7 +87,6 @@ func GetIPAddrs() (addresses []string) {
 			break
 		}
 	}
-	//logger.GlobalLog.Printf("%v", addresses)
 	return
 }
 

@@ -64,7 +64,6 @@ func NewConnTunnel(conn net.Conn) *connTunnel {
 func NewStreamConn(addr, port string) (*connTunnel, error) {
 	conn, err := net.DialTimeout("tcp", addr+":"+port, time.Second)
 	if err != nil {
-		//logger.GlobalLog.Printf("dail spdy error: %s", err)
 		return nil, err
 	}
 

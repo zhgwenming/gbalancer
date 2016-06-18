@@ -11,10 +11,6 @@ import (
 	"time"
 )
 
-//var (
-//	log = logger.NewLogger()
-//)
-
 type healthDriver interface {
 	AddDirector(backend string) error
 	BuildActiveBackends() (map[string]int, error)
@@ -61,8 +57,6 @@ func (w *Wrangler) ValidBackends() {
 		return
 	}
 
-	//logger.GlobalLog.Printf("backends is %v\n", backends)
-
 	// remove fail node from w.Backends first
 	for b := range w.Backends {
 		if _, ok := backends[b]; !ok {
@@ -98,7 +92,6 @@ func (w *Wrangler) Monitor() {
 	for {
 		select {
 		case <-ticker.C:
-			//logger.GlobalLog.Printf("got a tick")
 			w.ValidBackends()
 		}
 	}

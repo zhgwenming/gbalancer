@@ -29,7 +29,6 @@ func (c *HealthTcp) AddDirector(backend string) error {
 func tcpProbe(addr string) error {
 	conn, err := net.DialTimeout("tcp", addr, time.Second)
 	if err != nil {
-		//logger.GlobalLog.Printf("%s\n", err)
 		return err
 	}
 	defer conn.Close()
@@ -65,11 +64,9 @@ func (t *HealthTcp) BuildActiveBackends() (map[string]int, error) {
 		r := <-results
 		if r.err == nil {
 			backends[r.backend] = FlagUp
-			//logger.GlobalLog.Printf("host: %s\n", r.backend)
 		} else {
 			logger.GlobalLog.Printf("error: %s", r.err)
 		}
 	}
-	//logger.GlobalLog.Printf("Active server: %v\n", backends)
 	return backends, nil
 }

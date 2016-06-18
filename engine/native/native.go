@@ -14,7 +14,6 @@ import (
 )
 
 var (
-//	log        = logger.NewLogger()
 	tunnels    = flag.Uint("tunnels", 0, "number of tunnels per server")
 	streamPort = flag.String("streamport", "6900", "port of the remote stream server")
 	failover   = flag.Bool("failover", false, "whether to enable failover mode for scheduling")
@@ -59,7 +58,6 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 
 			for {
 				if conn, err := listener.Accept(); err == nil {
-					//logger.GlobalLog.Println("main: got a connection")
 					req := &Request{Conn: conn}
 					job <- req
 				} else {

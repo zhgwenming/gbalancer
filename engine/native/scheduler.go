@@ -6,7 +6,6 @@ package native
 
 import (
 	"container/heap"
-	//splice "github.com/creack/go-splice"
 	"github.com/zhgwenming/gbalancer/utils"
 	"io"
 	"net"
@@ -70,7 +69,6 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 	for {
 		select {
 		case back := <-s.done:
-			//logger.GlobalLog.Println("finishing a connection")
 			s.finish(back)
 		case backends := <-status:
 			if len(backends) == 0 {
@@ -113,7 +111,6 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 					weight = s.nextBackendSequence()
 				}
 				b := NewBackend(addr, s.tunnels, weight)
-				//b.failChan = &s.spdyFailChan
 				b.FailChan(s.spdyFailChan)
 				if s.tunnels > 0 {
 					for i := uint(0); i < s.tunnels; i++ {
@@ -162,7 +159,6 @@ func (s *Scheduler) dispatch(req *Request) {
 		logger.GlobalLog.Printf("No backend available\n")
 		return
 	}
-	//logger.GlobalLog.Println("Got a connection")
 
 	b := heap.Pop(&s.pool).(*Backend)
 	if b.ongoing >= MaxForwardersPerBackend {
@@ -185,19 +181,10 @@ type copyRet struct {
 	err   error
 }
 
-//func spliceCopy(dst io.Writer, src io.Reader, c chan *copyRet) {
-//	n, err := splice.Copy(dst, src)
-//	c <- &copyRet{n, err}
-//}
-
 func sockCopy(dst io.WriteCloser, src io.Reader, c chan *copyRet) {
 	n, err := io.Copy(dst, src)
-	//logger.GlobalLog.Printf("sent %d bytes to server", n)
 
 	// make backend read stream ended
-
-	//conn := dst.(net.Conn)
-	//conn.SetReadDeadline(time.Now())
 
 	// Close the upstream connection as Deadline
 	// not yet supported by spdystream by now
@@ -218,7 +205,6 @@ func (s *Scheduler) run(req *Request) {
 	// defer srv.Close()
 
 	c := make(chan *copyRet, 2)
-	//logger.GlobalLog.Printf("splicing socks")
 	go sockCopy(req.Conn, srv, c)
 	go sockCopy(srv, req.Conn, c)
 
