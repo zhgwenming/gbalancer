@@ -9,13 +9,13 @@ import (
 	"github.com/zhgwenming/gbalancer/config"
 	"github.com/zhgwenming/gbalancer/engine/ipvs"
 	"github.com/zhgwenming/gbalancer/engine/native"
-	logger "github.com/zhgwenming/gbalancer/log"
+	//logger "github.com/zhgwenming/gbalancer/log"
 	"github.com/zhgwenming/gbalancer/wrangler"
 	"sync"
 )
 
 var (
-	log        = logger.NewLogger()
+	//log        = logger.NewLogger()
 	ipvsMode   = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
 	ipvsRemote = flag.Bool("remote", false, "independent director")
 )

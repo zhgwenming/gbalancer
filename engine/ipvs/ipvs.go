@@ -29,10 +29,6 @@ type IPvs struct {
 	Persist   int
 }
 
-var (
-	log = logger.NewLogger()
-)
-
 func NewIPvs(addr, port, sch string, done <-chan struct{}, wgroup *sync.WaitGroup) *IPvs {
 	backends := make(map[string]string, 4)
 	return &IPvs{addr, port, sch, done, wgroup, backends, 300}
@@ -43,7 +39,7 @@ func runCommand(cmd string) error {
 	output, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("Err: %s Output: %s, Cmd %s", err, output, cmd)
-		log.Printf("%s", err)
+		logger.GlobalLog.Printf("%s", err)
 	}
 	return err
 }
@@ -63,7 +59,7 @@ func ensureCommands(cmds []string) error {
 //		ipnet, ok := i.(*net.IPNet)
 //
 //		if !ok {
-//			log.Fatal("assertion err: %v\n", ipnet)
+//			logger.GlobalLog.Fatal("assertion err: %v\n", ipnet)
 //		}
 //
 //		ip4 := ipnet.IP.To4()
@@ -73,7 +69,7 @@ func ensureCommands(cmds []string) error {
 //			break
 //		}
 //	}
-//	log.Printf("%v", addr)
+//	logger.GlobalLog.Printf("%v", addr)
 //	return
 //}
 //
@@ -83,7 +79,7 @@ func (i *IPvs) eventLoop(status <-chan map[string]int) {
 		select {
 		case backends := <-status:
 			if len(backends) == 0 {
-				log.Printf("balancer: got empty backends list")
+				logger.GlobalLog.Printf("balancer: got empty backends list")
 			}
 
 			for addr, _ := range i.backends {
@@ -138,8 +134,8 @@ func (i *IPvs) LocalSchedule(status <-chan map[string]int) {
 	if output, err := exec.Command("ipvsadm", "-A",
 		"-t", i.Addr+":"+i.Port,
 		"-s", i.Scheduler).CombinedOutput(); err != nil {
-		log.Printf("ipvs init: %s", err)
-		log.Printf("ipvs: %s", output)
+		logger.GlobalLog.Printf("ipvs init: %s", err)
+		logger.GlobalLog.Printf("ipvs: %s", output)
 		os.Exit(1)
 	}
 	defer func() {
@@ -166,7 +162,7 @@ func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 	}
 
 	if err := ensureCommands(cmds); err != nil {
-		log.Fatal(err)
+		logger.GlobalLog.Fatal(err)
 	}
 
 	if output, err := exec.Command("ipvsadm", "-A",
@@ -174,7 +170,7 @@ func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 		"-s", i.Scheduler,
 		"-p", strconv.Itoa(i.Persist)).CombinedOutput(); err != nil {
 		err = fmt.Errorf("Init Err: %s Output: %s", err, output)
-		log.Fatal(err)
+		logger.GlobalLog.Fatal(err)
 	}
 	defer func() {
 		cmd = "ipvsadm -D -t " + i.Addr + ":" + i.Port
@@ -195,30 +191,30 @@ func (i *IPvs) RemoteSchedule(status <-chan map[string]int) {
 	i.eventLoop(status)
 }
 func (i *IPvs) AddBackend(addr string) {
-	log.Printf("balancer: bring up %s.\n", addr)
+	logger.GlobalLog.Printf("balancer: bring up %s.\n", addr)
 	srv := i.Addr + ":" + i.Port
 	if output, err := exec.Command("ipvsadm", "-a",
 		"-t", srv,
 		"-r", addr, "-m").CombinedOutput(); err != nil {
 		err = fmt.Errorf("Add Err: %s Output: %s, Addr %s", err, output, addr)
-		log.Printf("%s", err)
+		logger.GlobalLog.Printf("%s", err)
 	}
 
 	i.backends[addr] = addr
 }
 
 func (i *IPvs) RemoveBackend(addr string) {
-	log.Printf("balancer: take down %s.\n", addr)
+	logger.GlobalLog.Printf("balancer: take down %s.\n", addr)
 	srv := i.Addr + ":" + i.Port
 	if _, ok := i.backends[addr]; ok {
 		if output, err := exec.Command("ipvsadm", "-d",
 			"-t", srv,
 			"-r", addr).CombinedOutput(); err != nil {
 			err = fmt.Errorf("Remove Err: %s Output: %s", err, output)
-			log.Printf("%s", err)
+			logger.GlobalLog.Printf("%s", err)
 		}
 		delete(i.backends, addr)
 	} else {
-		log.Printf("balancer: %s is not up, bug might exist!", addr)
+		logger.GlobalLog.Printf("balancer: %s is not up, bug might exist!", addr)
 	}
 }

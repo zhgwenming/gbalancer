@@ -9,6 +9,7 @@ import (
 	"fmt"
 	_ "github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/go-sql-driver/mysql"
 	"strings"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 // mysql> show status like 'wsrep_%';
@@ -57,18 +58,18 @@ func galeraProbe(user, pass, host, timeout string) (map[string]string, error) {
 
 	// user:password@tcp(db.example.com:3306)/dbname
 	dsn := user + ":" + pass + "@tcp(" + host + ")/?timeout=" + timeout + "s"
-	//log.Printf("Probing %s\n", dsn)
+	//logger.GlobalLog.Printf("Probing %s\n", dsn)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		//log.Printf("%s\n", err)
+		//logger.GlobalLog.Printf("%s\n", err)
 		return wsrep_status, err
 	}
 	defer db.Close()
 
 	rows, err := db.Query("show status like 'wsrep_%'")
 	if err != nil {
-		//log.Printf("%s\n", err)
+		//logger.GlobalLog.Printf("%s\n", err)
 		return wsrep_status, err
 	}
 
@@ -79,11 +80,11 @@ func galeraProbe(user, pass, host, timeout string) (map[string]string, error) {
 		if _, ok := wsrep_status[key]; ok {
 			wsrep_status[key] = value
 			//if !all {
-			//	log.Printf("%s %s\n", key, value)
+			//	logger.GlobalLog.Printf("%s %s\n", key, value)
 			//}
 		}
 		if all {
-			log.Printf("%s %s\n", key, value)
+			logger.GlobalLog.Printf("%s %s\n", key, value)
 		}
 	}
 
@@ -113,21 +114,21 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 		_, err := galeraProbe(c.User, c.Pass, addr, c.Timeout)
 		results <- backendStatus{addr, err}
 		//if err != nil {
-		//	log.Printf("probe: %s\n", err)
+		//	logger.GlobalLog.Printf("probe: %s\n", err)
 		//}
 	}
 
 	for dirIndex, dirAddr := range c.Director {
 		status, err := galeraProbe(c.User, c.Pass, dirAddr, c.Timeout)
 		if err != nil {
-			log.Println(err)
+			logger.GlobalLog.Println(err)
 			continue
 		}
 
 		backends[dirAddr] = FlagUp
 		if dirIndex != 0 {
 			c.Director[0], c.Director[dirIndex] = c.Director[dirIndex], c.Director[0]
-			log.Printf("Make %s as the first director\n", dirAddr)
+			logger.GlobalLog.Printf("Make %s as the first director\n", dirAddr)
 		}
 
 		if val, ok := status[WsrepAddresses]; ok && val != "" {
@@ -146,17 +147,17 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 				r := <-results
 				if r.err == nil {
 					backends[r.backend] = FlagUp
-					//log.Printf("host: %s\n", r.backend)
+					//logger.GlobalLog.Printf("host: %s\n", r.backend)
 				} else {
-					log.Printf("node not ready: %s", r.err)
+					logger.GlobalLog.Printf("node not ready: %s", r.err)
 				}
 			}
 			break
 		} else {
-			log.Printf("host %s: %s key doesn't exist in status, not a galera cluster?\n", dirAddr, WsrepAddresses)
+			logger.GlobalLog.Printf("host %s: %s key doesn't exist in status, not a galera cluster?\n", dirAddr, WsrepAddresses)
 			continue
 		}
 	}
-	//log.Printf("Active server: %v\n", backends)
+	//logger.GlobalLog.Printf("Active server: %v\n", backends)
 	return backends, nil
 }
