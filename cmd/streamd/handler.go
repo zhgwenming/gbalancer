@@ -33,7 +33,6 @@ func AgentStreamHandler(stream *spdystream.Stream) {
 	} else {
 		conn, err = net.Dial("unix", *serviceAddr)
 	}
-	//conn, err := net.Dial("tcp", "10.100.91.74:3306")
 
 	if err != nil {
 		logger.GlobalLog.Printf("Failed: %s\n", err)

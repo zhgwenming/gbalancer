@@ -65,7 +65,6 @@ func main() {
 	if *daemonMode {
 		if err := config.CheckFile(*configFile); err != nil {
 			fmt.Println(err)
-			//log.Fatal(err)
 			logger.GlobalLog.Fatal(err)
 		}
 	}
@@ -74,10 +73,8 @@ func main() {
 	settings, err := config.LoadConfig(*configFile)
 	if err != nil {
 		fmt.Printf("error: %s\n", err)
-		//log.Fatal("error:", err)
 		logger.GlobalLog.Fatal("error:", err)
 	}
-	//log.Printf(settings.ListenInfo())
 	logger.GlobalLog.Printf(settings.ListenInfo())
 
 	srv := &Server{settings: settings, wgroup: wgroup}
@@ -86,7 +83,6 @@ func main() {
 	n := nestor.Handle(*pidFile, foreground, srv)
 
 	if err := nestor.Start(n); err != nil {
-		//log.Fatal(err)
 		logger.GlobalLog.Fatal(err)
 	}
 }
