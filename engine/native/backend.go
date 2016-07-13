@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 	"unsafe"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 type BackendFlags uint16
@@ -85,7 +86,7 @@ func (b *Backend) SpdyCheckStreamId(backChan chan<- *spdySession) {
 			if !tunnel[index].switching {
 				// check to see if the spdyConn needed to be switched
 				if uint32(tunnel[index].conn.PeekNextStreamId()) > ThreshStreamId {
-					log.Printf("pre-create new session for %s", b.address)
+					logger.GlobalLog.Printf("pre-create new session for %s", b.address)
 					tunnel[index].switching = true
 					go CreateSpdySession(NewSpdySession(b, index), backChan)
 				}
@@ -121,9 +122,9 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 				if swapped {
 					if conn == nil {
 						// streamId used up
-						log.Printf("Used up streamdID. (%s)", err)
+						logger.GlobalLog.Printf("Used up streamdID. (%s)", err)
 					} else {
-						log.Printf("Failed to create stream. (%s)", err)
+						logger.GlobalLog.Printf("Failed to create stream. (%s)", err)
 					}
 
 					// try to close exist session
@@ -140,7 +141,7 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 		// just log error if we have at lease one connection in the tunnel
 		// if we don't, just fall back to tcp mode silently
 		if found {
-			log.Printf("Failed to create stream, rolling back to tcp mode. (%s)", err)
+			logger.GlobalLog.Printf("Failed to create stream, rolling back to tcp mode. (%s)", err)
 		}
 		conn, err = net.Dial("tcp", req.backend.address)
 	}
