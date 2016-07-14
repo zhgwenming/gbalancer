@@ -9,6 +9,7 @@ import (
 	"net"
 	"strings"
 	"time"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 const (
@@ -45,7 +46,7 @@ func NewConnTunnel(conn net.Conn) *connTunnel {
 	} else {
 		spdy, err := spdystream.NewConnection(conn, false)
 		if err != nil {
-			log.Printf("spdystream create connection error: %s", err)
+			logger.GlobalLog.Printf("spdystream create connection error: %s", err)
 			return nil
 		}
 
@@ -63,7 +64,6 @@ func NewConnTunnel(conn net.Conn) *connTunnel {
 func NewStreamConn(addr, port string) (*connTunnel, error) {
 	conn, err := net.DialTimeout("tcp", addr+":"+port, time.Second)
 	if err != nil {
-		//log.Printf("dail spdy error: %s", err)
 		return nil, err
 	}
 
@@ -73,11 +73,13 @@ func NewStreamConn(addr, port string) (*connTunnel, error) {
 }
 
 func CreateSpdySession(request *spdySession, ready chan<- *spdySession) {
+	defer RecoverReport()
+
 	for {
 		addrs := strings.Split(request.backend.address, ":")
 		if conn, err := NewStreamConn(addrs[0], *streamPort); err == nil {
 			request.spdy = conn
-			log.Printf("Created new session for: %s", request.backend.address)
+			logger.GlobalLog.Printf("Created new session for: %s", request.backend.address)
 			break
 		}
 		time.Sleep(time.Second)
