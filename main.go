@@ -22,12 +22,12 @@ var (
 
 var (
 	wgroup       = &sync.WaitGroup{}
-	log          = logger.NewLogger()
 	configFile   = flag.String("config", "/etc/gbalancer/gbalancer.json", "Configuration file")
 	printVersion = flag.Bool("version", false, "print gbalancer version")
 
 	daemonMode = flag.Bool("daemon", false, "daemon mode")
 	pidFile    = flag.String("pidfile", "", "pid file")
+	logdir 	   = flag.String("logdir", "", "Custom directory and filename")
 )
 
 func PrintVersion() {
@@ -56,6 +56,8 @@ func main() {
 
 	flag.Parse()
 
+	logger.GlobalLog = logger.NewLogger(*logdir)
+
 	if *printVersion {
 		PrintVersion()
 	}
@@ -63,7 +65,7 @@ func main() {
 	if *daemonMode {
 		if err := config.CheckFile(*configFile); err != nil {
 			fmt.Println(err)
-			log.Fatal(err)
+			logger.GlobalLog.Fatal(err)
 		}
 	}
 
@@ -71,9 +73,9 @@ func main() {
 	settings, err := config.LoadConfig(*configFile)
 	if err != nil {
 		fmt.Printf("error: %s\n", err)
-		log.Fatal("error:", err)
+		logger.GlobalLog.Fatal("error:", err)
 	}
-	log.Printf(settings.ListenInfo())
+	logger.GlobalLog.Printf(settings.ListenInfo())
 
 	srv := &Server{settings: settings, wgroup: wgroup}
 
@@ -81,6 +83,6 @@ func main() {
 	n := nestor.Handle(*pidFile, foreground, srv)
 
 	if err := nestor.Start(n); err != nil {
-		log.Fatal(err)
+		logger.GlobalLog.Fatal(err)
 	}
 }
