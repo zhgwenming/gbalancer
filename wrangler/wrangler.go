@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-var (
-	log = logger.NewLogger()
-)
+//var (
+//	log = logger.NewLogger()
+//)
 
 type healthDriver interface {
 	AddDirector(backend string) error
@@ -38,11 +38,11 @@ func NewWrangler(config *config.Configuration, back chan<- map[string]int) *Wran
 	case "ext":
 		hexec = NewHealthExt(config.ExtCommand)
 		if config.ExtCommand == "" {
-			log.Printf("Need to specify ExtCommand for ext Service")
+			logger.GlobalLog.Printf("Need to specify ExtCommand for ext Service")
 			os.Exit(1)
 		}
 	default:
-		log.Printf("Unknown healthy monitor: %s", config.Service)
+		logger.GlobalLog.Printf("Unknown healthy monitor: %s", config.Service)
 		os.Exit(1)
 	}
 
@@ -57,24 +57,24 @@ func NewWrangler(config *config.Configuration, back chan<- map[string]int) *Wran
 func (w *Wrangler) ValidBackends() {
 	backends, err := w.healthExec.BuildActiveBackends()
 	if err != nil {
-		log.Printf("wrangler: %s\n", err)
+		logger.GlobalLog.Printf("wrangler: %s\n", err)
 		return
 	}
 
-	//log.Printf("backends is %v\n", backends)
+	//logger.GlobalLog.Printf("backends is %v\n", backends)
 
 	// remove fail node from w.Backends first
 	for b := range w.Backends {
 		if _, ok := backends[b]; !ok {
 			delete(w.Backends, b)
-			log.Printf("wrangler: detected server %s is down\n", b)
+			logger.GlobalLog.Printf("wrangler: detected server %s is down\n", b)
 		}
 	}
 
 	// add new backends
 	for b := range backends {
 		if _, ok := w.Backends[b]; !ok {
-			log.Printf("wrangler: detected server %s is up\n", b)
+			logger.GlobalLog.Printf("wrangler: detected server %s is up\n", b)
 			w.Backends[b] = backends[b]
 		}
 	}
@@ -98,7 +98,7 @@ func (w *Wrangler) Monitor() {
 	for {
 		select {
 		case <-ticker.C:
-			//log.Printf("got a tick")
+			//logger.GlobalLog.Printf("got a tick")
 			w.ValidBackends()
 		}
 	}
