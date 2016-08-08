@@ -29,6 +29,8 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 	listenAddrs, err := settings.GetListenAddrs()
 	if err != nil {
 		logger.GlobalLog.Fatal(err)
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: Native Server listenAddrs are OK\n")
 	}
 
 	for _, listenAddr := range listenAddrs {
@@ -45,11 +47,14 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 				sch.RemoveBackend(addr)
 			}
 
+			logger.GlobalLog.Printf("Test_Issue: close the backends connection for spdy is OK\n")
 			listener.Close()
 		}()
 
 		if err != nil {
 			logger.GlobalLog.Fatal(err)
+		} else {
+			logger.GlobalLog.Printf("Test_Issue: Native Server get listener is OK\n")
 		}
 
 		// tcp/unix listener
@@ -57,7 +62,7 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup, done chan str
 
 			for {
 				if conn, err := listener.Accept(); err == nil {
-					//logger.GlobalLog.Println("main: got a connection")
+					logger.GlobalLog.Println("Test_Issue: main: native server got a connection")
 					req := &Request{Conn: conn}
 					job <- req
 				} else {

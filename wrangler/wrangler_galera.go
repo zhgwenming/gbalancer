@@ -38,11 +38,13 @@ type Galera struct {
 }
 
 func NewGalera(user, pass, timeout string) *Galera {
+	logger.GlobalLog.Printf("Test_Issue: Execution NewGalera function\n")
 	dir := make([]string, 0, MaxBackends)
 	return &Galera{user, pass, timeout, dir}
 }
 
 func (c *Galera) AddDirector(backend string) error {
+	logger.GlobalLog.Printf("Test_Issue: Execution AddDirector function\n")
 	c.Director = append(c.Director, backend)
 	return fmt.Errorf("Error to add backend %s\n", backend)
 }
@@ -58,12 +60,14 @@ func galeraProbe(user, pass, host, timeout string) (map[string]string, error) {
 
 	// user:password@tcp(db.example.com:3306)/dbname
 	dsn := user + ":" + pass + "@tcp(" + host + ")/?timeout=" + timeout + "s"
-	//logger.GlobalLog.Printf("Probing %s\n", dsn)
+	logger.GlobalLog.Printf("Wrangler galeraProbe: Probing %s\n", dsn)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		//logger.GlobalLog.Printf("%s\n", err)
 		return wsrep_status, err
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: Open mysql database successfully\n")
 	}
 	defer db.Close()
 
@@ -71,8 +75,9 @@ func galeraProbe(user, pass, host, timeout string) (map[string]string, error) {
 	if err != nil {
 		//logger.GlobalLog.Printf("%s\n", err)
 		return wsrep_status, err
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: Execution sql query successfully\n")
 	}
-
 	for rows.Next() {
 		var key string
 		var value string
@@ -84,7 +89,7 @@ func galeraProbe(user, pass, host, timeout string) (map[string]string, error) {
 			//}
 		}
 		if all {
-			logger.GlobalLog.Printf("%s %s\n", key, value)
+			logger.GlobalLog.Printf("galeraProbe: key and value are: %s %s\n", key, value)
 		}
 	}
 
@@ -106,11 +111,14 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 
 	if len(c.Director) == 0 {
 		return backends, fmt.Errorf("Empty directory server list\n")
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: Directory server list is not empty\n")
 	}
 
 	results := make(chan backendStatus, MaxBackends)
 
 	probe := func(user, pass, addr string) {
+		logger.GlobalLog.Printf("Test_Issue: BuildActiveBackends execution probe function\n")
 		_, err := galeraProbe(c.User, c.Pass, addr, c.Timeout)
 		results <- backendStatus{addr, err}
 		//if err != nil {
@@ -123,6 +131,8 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 		if err != nil {
 			logger.GlobalLog.Println(err)
 			continue
+		} else {
+			logger.GlobalLog.Printf("Test_Issue: galeraProbe execution successfully in cycle\n")
 		}
 
 		backends[dirAddr] = FlagUp
@@ -132,6 +142,7 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 		}
 
 		if val, ok := status[WsrepAddresses]; ok && val != "" {
+			logger.GlobalLog.Printf("Test_Issue: BuildActiveBackends count numWorkers\n")
 			addrs := strings.Split(val, ",")
 			numWorkers := 0
 			for _, addr := range addrs {
@@ -149,7 +160,7 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 					backends[r.backend] = FlagUp
 					//logger.GlobalLog.Printf("host: %s\n", r.backend)
 				} else {
-					logger.GlobalLog.Printf("node not ready: %s", r.err)
+					logger.GlobalLog.Printf("BuildActiveBackends: node not ready: %s", r.err)
 				}
 			}
 			break
@@ -158,6 +169,6 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 			continue
 		}
 	}
-	//logger.GlobalLog.Printf("Active server: %v\n", backends)
+	logger.GlobalLog.Printf("BuildActiveBackends: Active server: %v\n", backends)
 	return backends, nil
 }

@@ -38,17 +38,22 @@ func AgentStreamHandler(stream *spdystream.Stream) {
 	if err != nil {
 		logger.GlobalLog.Printf("Failed: %s\n", err)
 		return
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: AgentStreamHandler conn is created successfully\n")
 	}
 
 	replyErr := stream.SendReply(http.Header{}, false)
 	if replyErr != nil {
 		return
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: stream.SendReply is called successfully\n")
 	}
 
 	// drain the header requests to avoid DoS
 	go func() {
 		for {
 			if _, err := stream.ReceiveHeader(); err != nil {
+				logger.GlobalLog.Printf("Test_Issue:  drain the header requests operation is failure\n")
 				return
 			}
 		}

@@ -49,6 +49,7 @@ func NewScheduler(lw bool, tunnels uint) *Scheduler {
 	failChan := make(chan *spdySession, MaxBackends)
 
 	scheduler := &Scheduler{pool, 0, backends, done, pending, tunnels, readyChan, failChan}
+	logger.GlobalLog.Printf("Test_Issue: start scheduler is finished successfully\n")
 	return scheduler
 }
 
@@ -61,7 +62,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 	for {
 		select {
 		case back := <-s.done:
-			//logger.GlobalLog.Println("finishing a connection")
+			logger.GlobalLog.Println("finishing a connection")
 			s.finish(back)
 		case backends := <-status:
 			if len(backends) == 0 {
@@ -71,8 +72,10 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 			for addr, b := range s.backends {
 				if _, ok := backends[addr]; !ok {
 					// not exist in the active backend list
+					logger.GlobalLog.Printf("Test_Issue: Schedule remove no active backend: %s\n", addr)
 					s.RemoveBackend(addr)
 				} else {
+					logger.GlobalLog.Printf("Test_Issue: Schedule delete specified backend: %s\n", addr)
 					delete(backends, addr)
 					// push back backend with error in run()
 					if b.index == -1 {
@@ -108,14 +111,17 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 				b.FailChan(s.spdyFailChan)
 				if s.tunnels > 0 {
 					for i := uint(0); i < s.tunnels; i++ {
+						logger.GlobalLog.Printf("Test_Issue: Schedule execution NewSpdySession\n")
 						go CreateSpdySession(NewSpdySession(b, i), s.newTunnelChan)
 					}
 				} else {
 					s.AddBackend(b)
 				}
 			}
+			logger.GlobalLog.Printf("Test_Issue: Schedule NEW active backend\n")
 
 		case session := <-s.spdyFailChan:
+			logger.GlobalLog.Printf("Test_Issue: Schedule spdyFailchan\n")
 			backend := session.backend
 			index := session.connindex
 			if !backend.tunnel[index].switching {
@@ -123,6 +129,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 				go CreateSpdySession(session, s.newTunnelChan)
 			}
 		case session := <-s.newTunnelChan:
+			logger.GlobalLog.Printf("Test_Issue: Schedule add new backend to the hash\n")
 			b := session.backend
 			// switch the spdy connection first
 			b.SwitchSpdyConn(session.connindex, session.spdy)
@@ -132,6 +139,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 				s.AddBackend(b)
 				// drain the pending list
 				if len(s.pending) > 0 && len(s.pool.backends) > 0 {
+		            logger.GlobalLog.Printf("Test_Issue: Execution dispatch in newTunnelChan item of Schedule function\n")
 					for _, p := range s.pending {
 						s.dispatch(p)
 					}
@@ -139,6 +147,7 @@ func (s *Scheduler) Schedule(job chan *Request, status <-chan map[string]int) {
 				}
 			}
 		case j := <-job:
+		    logger.GlobalLog.Printf("Test_Issue: Execution dispatch in job item of Schedule function\n")
 			s.dispatch(j)
 		}
 
@@ -153,7 +162,7 @@ func (s *Scheduler) dispatch(req *Request) {
 		logger.GlobalLog.Printf("No backend available\n")
 		return
 	}
-	//logger.GlobalLog.Println("Got a connection")
+	logger.GlobalLog.Println("scheduler dispatch: Got a connection")
 
 	b := heap.Pop(&s.pool).(*Backend)
 	if b.ongoing >= MaxForwardersPerBackend {
@@ -198,6 +207,8 @@ func sockCopy(dst io.WriteCloser, src io.Reader, c chan *copyRet) {
 
 func (s *Scheduler) run(req *Request) {
 	// do the actuall work
+	logger.GlobalLog.Printf("Test_Issue: Schedule run: do the actuall work\n")
+
 	srv, err := req.backend.ForwarderNewConnection(req)
 	if err != nil {
 		req.err = err
@@ -209,7 +220,7 @@ func (s *Scheduler) run(req *Request) {
 	// defer srv.Close()
 
 	c := make(chan *copyRet, 2)
-	//logger.GlobalLog.Printf("splicing socks")
+	logger.GlobalLog.Printf("splicing socks")
 	go sockCopy(req.Conn, srv, c)
 	go sockCopy(srv, req.Conn, c)
 
@@ -227,6 +238,7 @@ func (s *Scheduler) finish(req *Request) {
 
 	if err != nil {
 		// keep it out of the heap
+		logger.GlobalLog.Printf("Test_Issue: Schedule finish: keep it out of the heap\n")
 		if backend.index != -1 {
 			heap.Remove(&s.pool, backend.index)
 		}
@@ -237,15 +249,23 @@ func (s *Scheduler) finish(req *Request) {
 			// detected the connection error
 			// keep it out of the heap and try to reschedule the job
 			logger.GlobalLog.Printf("%s, rescheduling request %v\n", err, req)
+		    logger.GlobalLog.Printf("Test_Issue: Execution dispatch in finish function\n")
 			s.dispatch(req)
 		}
 	} else {
 		if backend.index == -1 {
 			// in case the wrangler already detected error of this backend
 			// which makes this backend already removed from the heap pool
+			logger.GlobalLog.Printf("Test_Issue: Schedule finish: wrangler already detected error of this backend\n")
 			backend.ongoing--
 		} else {
+			logger.GlobalLog.Printf("Test_Issue: Schedule finish: push back this backend to heap\n")
 			heap.Remove(&s.pool, backend.index)
+			logger.GlobalLog.Printf("Test_Issue: Schedule finish: Tunnels are %d\n", backend.tunnels)
+			//for i := 0; i < int(backend.tunnels); i++ {
+				//oneTunnel := backend.tunnel[i]
+				//oneTunnel.Close()
+			//}
 			backend.ongoing--
 			heap.Push(&s.pool, backend)
 		}
@@ -254,13 +274,13 @@ func (s *Scheduler) finish(req *Request) {
 
 func (s *Scheduler) AddBackend(b *Backend) {
 	addr := b.address
-	logger.GlobalLog.Printf("balancer: bring up %s.\n", addr)
+	logger.GlobalLog.Printf("Schedule AddBackend balancer: bring up %s.\n", addr)
 	s.backends[addr] = b
 	heap.Push(&s.pool, b)
 }
 
 func (s *Scheduler) RemoveBackend(addr string) {
-	logger.GlobalLog.Printf("balancer: take down %s.\n", addr)
+	logger.GlobalLog.Printf("Schedule RemoveBackend balancer: take down %s.\n", addr)
 	if b, ok := s.backends[addr]; ok {
 		// the backend might be already removed from the heap
 		if b.index != -1 {
