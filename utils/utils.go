@@ -16,16 +16,12 @@ import (
 	"syscall"
 )
 
-var (
-	log = logger.NewLogger()
-)
-
 func RunCommand(cmd string) error {
 	args := strings.Fields(cmd)
 	output, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("Err: %s Output: %s, Cmd %s", err, output, cmd)
-		log.Printf("%s", err)
+		logger.GlobalLog.Printf("%s", err)
 	}
 	return err
 }
@@ -52,18 +48,18 @@ iface:
 			continue
 		} else {
 			for _, ipaddr := range addrs {
-				//log.Printf("%v", ipaddr)
+				//logger.GlobalLog.Printf("%v", ipaddr)
 				ipnet, ok := ipaddr.(*net.IPNet)
 
 				if !ok {
-					log.Fatal("assertion err: %v\n", ipnet)
+					logger.GlobalLog.Fatal("assertion err: %v\n", ipnet)
 				}
 
 				ip4 := ipnet.IP.To4()
 				if ip4 == nil {
 					continue
 				}
-				//log.Printf("%v", ip4)
+				//logger.GlobalLog.Printf("%v", ip4)
 
 				if !ip4.IsLoopback() {
 					addr = ip4.String()
@@ -72,7 +68,7 @@ iface:
 			}
 		}
 	}
-	log.Printf("Found local ip4 %v", addr)
+	logger.GlobalLog.Printf("Found local ip4 %v", addr)
 	return
 }
 
@@ -82,7 +78,7 @@ func GetIPAddrs() (addresses []string) {
 		ipnet, ok := i.(*net.IPNet)
 
 		if !ok {
-			log.Fatal("assertion err: ", i)
+			logger.GlobalLog.Fatal("assertion err: ", i)
 		}
 
 		ip4 := ipnet.IP.To4()
@@ -93,7 +89,7 @@ func GetIPAddrs() (addresses []string) {
 			break
 		}
 	}
-	//log.Printf("%v", addresses)
+	//logger.GlobalLog.Printf("%v", addresses)
 	return
 }
 

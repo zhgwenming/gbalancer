@@ -17,15 +17,15 @@ import (
 )
 
 const (
-	VERSION = "0.6.5"
+	VERSION = "0.6.7"
 )
 
 var (
 	wgroup       = &sync.WaitGroup{}
-	log          = logger.NewLogger()
 	configFile   = flag.String("config", "gbalancer.json", "Configuration file")
 	daemonMode   = flag.Bool("daemon", false, "daemon mode")
 	printVersion = flag.Bool("version", false, "print gbalancer version")
+	logdir 	     = flag.String("logdir", "", "Custom directory and filename")
 )
 
 func PrintVersion() {
@@ -37,6 +37,8 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	flag.Parse()
+
+	logger.GlobalLog = logger.NewLogger(*logdir)
 
 	if *printVersion {
 		PrintVersion()
@@ -50,9 +52,9 @@ func main() {
 	settings, err := config.LoadConfig(*configFile)
 	if err != nil {
 		fmt.Printf("error: %s\n", err)
-		log.Fatal("error:", err)
+		logger.GlobalLog.Fatal("error:", err)
 	}
-	log.Printf(settings.ListenInfo())
+	logger.GlobalLog.Printf(settings.ListenInfo())
 
 	daemon.CreatePidfile()
 

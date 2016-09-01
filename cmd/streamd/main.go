@@ -22,7 +22,6 @@ var (
 	pidFile     = flag.String("pidfile", "", "pid file")
 	listenAddr  = flag.String("listen", ":6900", "port number")
 	serviceAddr = flag.String("to", "/var/lib/mysql/mysql.sock", "service address")
-	log         = logger.NewLogger()
 	sigChan     = make(chan os.Signal, 1)
 	wgroup      = &sync.WaitGroup{}
 )
@@ -39,12 +38,16 @@ func main() {
 	if *pidFile != "" {
 		if err := utils.WritePid(*pidFile); err != nil {
 			fmt.Printf("error: %s\n", err)
-			log.Printf("error: %s", err)
+			logger.GlobalLog.Printf("error: %s", err)
 			os.Exit(1)
+		} else {
+			logger.GlobalLog.Printf("Test_Issue: pidFile is correct\n")
 		}
 		defer func() {
 			if err := os.Remove(*pidFile); err != nil {
-				log.Printf("error to remove pidfile %s:", err)
+				logger.GlobalLog.Printf("error to remove pidfile %s:", err)
+			} else {
+				logger.GlobalLog.Printf("Test_Issue: remove is called successfully\n")
 			}
 		}()
 	}
@@ -52,8 +55,10 @@ func main() {
 	listener, err := net.Listen("tcp", *listenAddr)
 	if err != nil {
 		fmt.Printf("Listen error: %s\n", err)
-		log.Printf("Listen error: %s", err)
+		logger.GlobalLog.Printf("Listen error: %s", err)
 		os.Exit(1)
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: listener is Correct\n")
 	}
 	
 	var spdyConns = make([] *spdystream.Connection, 128)
@@ -62,12 +67,16 @@ func main() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				log.Printf("Accept error: %s", err)
+				logger.GlobalLog.Printf("Accept error: %s", err)
+			} else {
+				logger.GlobalLog.Printf("Test_Issue: Accept is called successfully\n")
 			}
 			spdyConn, err := spdystream.NewConnection(conn, true)
 			if err != nil {
 				conn.Close()
-				log.Printf("New spdyConnection error, %s", err)
+				logger.GlobalLog.Printf("New spdyConnection error, %s", err)
+			} else {
+				logger.GlobalLog.Printf("Test_Issue: spdyConnection is called successfully\n")
 			}
 			spdyConns = append(spdyConns, spdyConn)
 			go spdyConn.Serve(AgentStreamHandler)
@@ -78,7 +87,7 @@ func main() {
 	
 	// waiting for exit signals
 	for sig := range sigChan {
-		log.Printf("captured %v, exiting..", sig)
+		logger.GlobalLog.Printf("captured %v, exiting..", sig)
 		
 		for _, spdyConn := range spdyConns {
 			if nil != spdyConn{

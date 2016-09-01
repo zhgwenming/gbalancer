@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 const (
@@ -36,6 +37,7 @@ func LoadConfig(configFile string) (*Configuration, error) {
 	// might be needed by the ipvs engine
 	if config.Addr != "" {
 		tcpAddr := "tcp://" + config.Addr + ":" + config.Port
+		logger.GlobalLog.Printf("Test_Issue:  LoadConfig tcpAddr is %s\n", tcpAddr)
 		config.AddListen(tcpAddr)
 	}
 
@@ -72,6 +74,7 @@ func (c *Configuration) GetListenAddrs() ([]ListenAddr, error) {
 		}
 
 		net, laddr := protoAddrParts[0], protoAddrParts[1]
+		logger.GlobalLog.Printf("Test_Issue: ListenAddrs tcpAddr is %s\n", laddr)
 
 		var addr ListenAddr
 		if net == "unix" {

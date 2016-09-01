@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 	"unsafe"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 type BackendFlags uint16
@@ -48,6 +49,7 @@ func NewBackend(addr string, tunnels uint, weight uint) *Backend {
 		tunnels: tunnels,
 		flags:   FlagInit,
 	}
+	logger.GlobalLog.Printf("Test_Issue: NewBackend is called successfully\n")
 
 	return b
 }
@@ -59,6 +61,7 @@ func (b *Backend) SwitchSpdyConn(index uint, to *connTunnel) {
 	b.tunnel[index].conn = to.conn
 	b.tunnel[index].tcpAddr = to.tcpAddr
 	b.tunnel[index].switching = false
+	logger.GlobalLog.Printf("Test_Issue: SwitchSpdyConn is called successfully\n")
 }
 
 func (b *Backend) FailChan(fail chan<- *spdySession) {
@@ -73,6 +76,8 @@ func (b *Backend) SpdyCheckStreamId(backChan chan<- *spdySession) {
 	b.count++
 
 	if b.tunnels == 0 || time.Since(spdyCheckTime) < 5*time.Second {
+		logger.GlobalLog.Printf("Test_Issue: Tunnels num is %d\n", b.tunnels)
+		logger.GlobalLog.Printf("Test_Issue: SpdyCheckStreamId end and not executing CreateSpdySession func\n")
 		return
 	}
 
@@ -85,8 +90,9 @@ func (b *Backend) SpdyCheckStreamId(backChan chan<- *spdySession) {
 			if !tunnel[index].switching {
 				// check to see if the spdyConn needed to be switched
 				if uint32(tunnel[index].conn.PeekNextStreamId()) > ThreshStreamId {
-					log.Printf("pre-create new session for %s", b.address)
+					logger.GlobalLog.Printf("pre-create new session for %s", b.address)
 					tunnel[index].switching = true
+		            logger.GlobalLog.Printf("Test_Issue: SpdyCheckStreamId execution NewSpdySession\n")
 					go CreateSpdySession(NewSpdySession(b, index), backChan)
 				}
 			}
@@ -98,8 +104,11 @@ func (b *Backend) SpdyCheckStreamId(backChan chan<- *spdySession) {
 // takeoff the spdyconn if it's broken
 func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 	if b.tunnels <= 0 {
+		logger.GlobalLog.Printf("Test_Issue: ForwarderNewConnection execution failure: Tunnels number<=0\n")
 		return net.Dial("tcp", req.backend.address)
 	}
+
+    logger.GlobalLog.Printf("Test_Issue: ForwarderNewConnection execution successfully: Tunnels number>0\n")
 
 	var found bool
 	var conn net.Conn
@@ -121,16 +130,18 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 				if swapped {
 					if conn == nil {
 						// streamId used up
-						log.Printf("Used up streamdID. (%s)", err)
+						logger.GlobalLog.Printf("Used up streamdID. (%s)", err)
 					} else {
-						log.Printf("Failed to create stream. (%s)", err)
+						logger.GlobalLog.Printf("Failed to create stream. (%s)", err)
 					}
 
 					// try to close exist session
 					spdyconn.Close()
+		            logger.GlobalLog.Printf("Test_Issue: ForwarderNewConnection execution NewSpdySession\n")
 					b.failChan <- NewSpdySession(b, index)
 				}
 			} else {
+				logger.GlobalLog.Printf("Test_Issue: spdyconn.CreateStream is called successfully\n")
 				break
 			}
 		}
@@ -140,7 +151,7 @@ func (b *Backend) ForwarderNewConnection(req *Request) (net.Conn, error) {
 		// just log error if we have at lease one connection in the tunnel
 		// if we don't, just fall back to tcp mode silently
 		if found {
-			log.Printf("Failed to create stream, rolling back to tcp mode. (%s)", err)
+			logger.GlobalLog.Printf("Failed to create stream, rolling back to tcp mode. (%s)", err)
 		}
 		conn, err = net.Dial("tcp", req.backend.address)
 	}

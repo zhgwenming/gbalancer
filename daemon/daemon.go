@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	log     = logger.NewLogger()
 	pidFile = flag.String("pidfile", "", "pid file")
 	sigChan = make(chan os.Signal, 1)
 )
@@ -28,7 +27,7 @@ func CreatePidfile() {
 	if *pidFile != "" {
 		if err := utils.WritePid(*pidFile); err != nil {
 			fmt.Printf("error: %s\n", err)
-			log.Fatal("error:", err)
+			logger.GlobalLog.Fatal("error:", err)
 		}
 	}
 }
@@ -36,7 +35,7 @@ func CreatePidfile() {
 func RemovePidfile() {
 	if *pidFile != "" {
 		if err := os.Remove(*pidFile); err != nil {
-			log.Printf("error to remove pidfile %s:", err)
+			logger.GlobalLog.Printf("error to remove pidfile %s:", err)
 		}
 	}
 }
@@ -44,7 +43,7 @@ func RemovePidfile() {
 func WaitSignal(cleanup func()) {
 	// waiting for exit signals
 	for sig := range sigChan {
-		log.Printf("captured %v, exiting..", sig)
+		logger.GlobalLog.Printf("captured %v, exiting..", sig)
 		// exit if we get any signal
 		// Todo - catch signal other than SIGTERM/SIGINT
 		break

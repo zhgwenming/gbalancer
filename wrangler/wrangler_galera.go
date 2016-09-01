@@ -9,6 +9,7 @@ import (
 	"fmt"
 	_ "github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/go-sql-driver/mysql"
 	"strings"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 // mysql> show status like 'wsrep_%';
@@ -37,11 +38,13 @@ type Galera struct {
 }
 
 func NewGalera(user, pass, timeout string) *Galera {
+	logger.GlobalLog.Printf("Test_Issue: Execution NewGalera function\n")
 	dir := make([]string, 0, MaxBackends)
 	return &Galera{user, pass, timeout, dir}
 }
 
 func (c *Galera) AddDirector(backend string) error {
+	logger.GlobalLog.Printf("Test_Issue: Execution AddDirector function\n")
 	c.Director = append(c.Director, backend)
 	return fmt.Errorf("Error to add backend %s\n", backend)
 }
@@ -57,21 +60,24 @@ func galeraProbe(user, pass, host, timeout string) (map[string]string, error) {
 
 	// user:password@tcp(db.example.com:3306)/dbname
 	dsn := user + ":" + pass + "@tcp(" + host + ")/?timeout=" + timeout + "s"
-	//log.Printf("Probing %s\n", dsn)
+	logger.GlobalLog.Printf("Wrangler galeraProbe: Probing %s\n", dsn)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		//log.Printf("%s\n", err)
+		//logger.GlobalLog.Printf("%s\n", err)
 		return wsrep_status, err
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: Open mysql database successfully\n")
 	}
 	defer db.Close()
 
 	rows, err := db.Query("show status like 'wsrep_%'")
 	if err != nil {
-		//log.Printf("%s\n", err)
+		//logger.GlobalLog.Printf("%s\n", err)
 		return wsrep_status, err
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: Execution sql query successfully\n")
 	}
-
 	for rows.Next() {
 		var key string
 		var value string
@@ -79,11 +85,11 @@ func galeraProbe(user, pass, host, timeout string) (map[string]string, error) {
 		if _, ok := wsrep_status[key]; ok {
 			wsrep_status[key] = value
 			//if !all {
-			//	log.Printf("%s %s\n", key, value)
+			//	logger.GlobalLog.Printf("%s %s\n", key, value)
 			//}
 		}
 		if all {
-			log.Printf("%s %s\n", key, value)
+			logger.GlobalLog.Printf("galeraProbe: key and value are: %s %s\n", key, value)
 		}
 	}
 
@@ -105,32 +111,38 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 
 	if len(c.Director) == 0 {
 		return backends, fmt.Errorf("Empty directory server list\n")
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: Directory server list is not empty\n")
 	}
 
 	results := make(chan backendStatus, MaxBackends)
 
 	probe := func(user, pass, addr string) {
+		logger.GlobalLog.Printf("Test_Issue: BuildActiveBackends execution probe function\n")
 		_, err := galeraProbe(c.User, c.Pass, addr, c.Timeout)
 		results <- backendStatus{addr, err}
 		//if err != nil {
-		//	log.Printf("probe: %s\n", err)
+		//	logger.GlobalLog.Printf("probe: %s\n", err)
 		//}
 	}
 
 	for dirIndex, dirAddr := range c.Director {
 		status, err := galeraProbe(c.User, c.Pass, dirAddr, c.Timeout)
 		if err != nil {
-			log.Println(err)
+			logger.GlobalLog.Println(err)
 			continue
+		} else {
+			logger.GlobalLog.Printf("Test_Issue: galeraProbe execution successfully in cycle\n")
 		}
 
 		backends[dirAddr] = FlagUp
 		if dirIndex != 0 {
 			c.Director[0], c.Director[dirIndex] = c.Director[dirIndex], c.Director[0]
-			log.Printf("Make %s as the first director\n", dirAddr)
+			logger.GlobalLog.Printf("Make %s as the first director\n", dirAddr)
 		}
 
 		if val, ok := status[WsrepAddresses]; ok && val != "" {
+			logger.GlobalLog.Printf("Test_Issue: BuildActiveBackends count numWorkers\n")
 			addrs := strings.Split(val, ",")
 			numWorkers := 0
 			for _, addr := range addrs {
@@ -146,17 +158,17 @@ func (c *Galera) BuildActiveBackends() (map[string]int, error) {
 				r := <-results
 				if r.err == nil {
 					backends[r.backend] = FlagUp
-					//log.Printf("host: %s\n", r.backend)
+					//logger.GlobalLog.Printf("host: %s\n", r.backend)
 				} else {
-					log.Printf("node not ready: %s", r.err)
+					logger.GlobalLog.Printf("BuildActiveBackends: node not ready: %s", r.err)
 				}
 			}
 			break
 		} else {
-			log.Printf("host %s: %s key doesn't exist in status, not a galera cluster?\n", dirAddr, WsrepAddresses)
+			logger.GlobalLog.Printf("host %s: %s key doesn't exist in status, not a galera cluster?\n", dirAddr, WsrepAddresses)
 			continue
 		}
 	}
-	//log.Printf("Active server: %v\n", backends)
+	logger.GlobalLog.Printf("BuildActiveBackends: Active server: %v\n", backends)
 	return backends, nil
 }

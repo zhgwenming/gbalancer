@@ -9,13 +9,12 @@ import (
 	"github.com/zhgwenming/gbalancer/config"
 	"github.com/zhgwenming/gbalancer/engine/ipvs"
 	"github.com/zhgwenming/gbalancer/engine/native"
-	logger "github.com/zhgwenming/gbalancer/log"
 	"github.com/zhgwenming/gbalancer/wrangler"
 	"sync"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 var (
-	log        = logger.NewLogger()
 	ipvsMode   = flag.Bool("ipvs", false, "to use lvs as loadbalancer")
 	ipvsRemote = flag.Bool("remote", false, "independent director")
 )
@@ -31,6 +30,7 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup) (done chan st
 
 	done = make(chan struct{})
 	if *ipvsMode {
+		logger.GlobalLog.Printf("Test_Issue: Engine Server is running by ipvsMode\n")
 		wgroup.Add(1)
 		if *ipvsRemote {
 			ipvs := ipvs.NewIPvs(settings.Addr, settings.Port, "wlc", done, wgroup)
@@ -41,6 +41,7 @@ func Serve(settings *config.Configuration, wgroup *sync.WaitGroup) (done chan st
 			go ipvs.LocalSchedule(status)
 		}
 	} else {
+		logger.GlobalLog.Printf("Test_Issue: Engine Server is running by nativeMode\n")
 		native.Serve(settings, wgroup, done, status)
 	}
 	return done

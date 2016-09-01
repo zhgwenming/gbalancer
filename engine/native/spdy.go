@@ -9,6 +9,7 @@ import (
 	"net"
 	"strings"
 	"time"
+	logger "github.com/zhgwenming/gbalancer/log"
 )
 
 const (
@@ -28,6 +29,7 @@ type spdySession struct {
 }
 
 func NewSpdySession(backend *Backend, index uint) *spdySession {
+	logger.GlobalLog.Printf("Test_Issue: spdy NewSpdySession is called successfully\n")
 	return &spdySession{backend: backend, connindex: index}
 }
 
@@ -45,8 +47,10 @@ func NewConnTunnel(conn net.Conn) *connTunnel {
 	} else {
 		spdy, err := spdystream.NewConnection(conn, false)
 		if err != nil {
-			log.Printf("spdystream create connection error: %s", err)
+			logger.GlobalLog.Printf("spdystream create connection error: %s", err)
 			return nil
+		} else {
+			logger.GlobalLog.Printf("Test_Issue: spdystream create connection successfully\n")
 		}
 
 		go spdy.Serve(spdystream.NoOpStreamHandler)
@@ -63,8 +67,10 @@ func NewConnTunnel(conn net.Conn) *connTunnel {
 func NewStreamConn(addr, port string) (*connTunnel, error) {
 	conn, err := net.DialTimeout("tcp", addr+":"+port, time.Second)
 	if err != nil {
-		//log.Printf("dail spdy error: %s", err)
+		logger.GlobalLog.Printf("dail spdy error: %s", err)
 		return nil, err
+	} else {
+		logger.GlobalLog.Printf("Test_Issue: dail spdy OK\n")
 	}
 
 	connTunnel := NewConnTunnel(conn)
@@ -77,7 +83,7 @@ func CreateSpdySession(request *spdySession, ready chan<- *spdySession) {
 		addrs := strings.Split(request.backend.address, ":")
 		if conn, err := NewStreamConn(addrs[0], *streamPort); err == nil {
 			request.spdy = conn
-			log.Printf("Created new session for: %s", request.backend.address)
+			logger.GlobalLog.Printf("Created new session for: %s", request.backend.address)
 			break
 		}
 		time.Sleep(time.Second)

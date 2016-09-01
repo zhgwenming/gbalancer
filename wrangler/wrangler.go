@@ -11,10 +11,6 @@ import (
 	"time"
 )
 
-var (
-	log = logger.NewLogger()
-)
-
 type healthDriver interface {
 	AddDirector(backend string) error
 	BuildActiveBackends() (map[string]int, error)
@@ -30,19 +26,22 @@ func NewWrangler(config *config.Configuration, back chan<- map[string]int) *Wran
 	var hexec healthDriver
 	switch config.Service {
 	case "galera":
+		logger.GlobalLog.Printf("Test_Issue: Execution galera protocol\n")
 		hexec = NewGalera(config.User, config.Pass, config.Timeout)
 	case "tcp":
+		logger.GlobalLog.Printf("Test_Issue: Execution tcp protocol\n")
 		hexec = NewHealthTcp()
 	case "http":
+		logger.GlobalLog.Printf("Test_Issue: Execution http protocol\n")
 		hexec = NewHealthHTTP()
 	case "ext":
 		hexec = NewHealthExt(config.ExtCommand)
 		if config.ExtCommand == "" {
-			log.Printf("Need to specify ExtCommand for ext Service")
+			logger.GlobalLog.Printf("Need to specify ExtCommand for ext Service")
 			os.Exit(1)
 		}
 	default:
-		log.Printf("Unknown healthy monitor: %s", config.Service)
+		logger.GlobalLog.Printf("Unknown healthy monitor: %s", config.Service)
 		os.Exit(1)
 	}
 
@@ -57,24 +56,24 @@ func NewWrangler(config *config.Configuration, back chan<- map[string]int) *Wran
 func (w *Wrangler) ValidBackends() {
 	backends, err := w.healthExec.BuildActiveBackends()
 	if err != nil {
-		log.Printf("wrangler: %s\n", err)
+		logger.GlobalLog.Printf("wrangler: %s\n", err)
 		return
 	}
 
-	//log.Printf("backends is %v\n", backends)
+	logger.GlobalLog.Printf("Wrangler ValidBackends: backends is %v\n", backends)
 
 	// remove fail node from w.Backends first
 	for b := range w.Backends {
 		if _, ok := backends[b]; !ok {
 			delete(w.Backends, b)
-			log.Printf("wrangler: detected server %s is down\n", b)
+			logger.GlobalLog.Printf("wrangler: detected server %s is down and delete it\n", b)
 		}
 	}
 
 	// add new backends
 	for b := range backends {
 		if _, ok := w.Backends[b]; !ok {
-			log.Printf("wrangler: detected server %s is up\n", b)
+			logger.GlobalLog.Printf("wrangler: detected server %s is up and add it\n", b)
 			w.Backends[b] = backends[b]
 		}
 	}
@@ -89,8 +88,10 @@ func (w *Wrangler) Monitor() {
 	for {
 		w.ValidBackends()
 		if len(w.Backends) > 0 {
+			logger.GlobalLog.Printf("Test_Issue: Monitor is OK\n")
 			break
 		}
+		logger.GlobalLog.Printf("Test_Issue: Backends is zero and need to poll\n")
 		time.Sleep(1 * time.Second)
 	}
 	// periodic check
@@ -98,7 +99,7 @@ func (w *Wrangler) Monitor() {
 	for {
 		select {
 		case <-ticker.C:
-			//log.Printf("got a tick")
+			logger.GlobalLog.Printf("Wrangler Monitor: got a tick")
 			w.ValidBackends()
 		}
 	}
