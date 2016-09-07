@@ -1,9 +1,11 @@
 package spdystream
 
 import (
-	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/code.google.com/p/go.net/spdy"
 	"container/heap"
 	"sync"
+
+	//"github.com/docker/spdystream/spdy"
+	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/docker/spdystream/spdy"
 )
 
 type prioritizedFrame struct {
