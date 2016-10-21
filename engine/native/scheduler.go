@@ -11,6 +11,7 @@ import (
 	"io"
 	"net"
 	"sort"
+	"io/ioutil"
 )
 
 type Request struct {
@@ -182,6 +183,11 @@ type copyRet struct {
 
 func sockCopy(dst io.WriteCloser, src io.Reader, c chan *copyRet) {
 	n, err := io.Copy(dst, src)
+	if err != nil {
+		log.Printf("\"Scheduler\", \"sockCopy\", \"io.Copy error\" message: %s\n", err)
+		log.Printf("\"Scheduler\", \"sockCopy\", \"io.Copy error\" write byte length: %d\n", n)
+		io.Copy(ioutil.Discard, src)
+	}
 	//log.Printf("sent %d bytes to server", n)
 
 	// make backend read stream ended
