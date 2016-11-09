@@ -1,7 +1,6 @@
 package spdystream
 
 import (
-	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/code.google.com/p/go.net/spdy"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +8,9 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	//"github.com/docker/spdystream/spdy"
+	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/github.com/docker/spdystream/spdy"
 )
 
 var (
@@ -32,6 +34,7 @@ type Stream struct {
 	finished   bool
 	replyCond  *sync.Cond
 	replied    bool
+	closeLock  sync.Mutex
 	closeChan  chan bool
 }
 
@@ -57,8 +60,6 @@ func (s *Stream) WriteData(data []byte, fin bool) error {
 		Data:     data,
 	}
 
-	s.conn.writeLock.Lock()
-	defer s.conn.writeLock.Unlock()
 	debugMessage("(%p) (%d) Writing data frame", s, s.streamId)
 	return s.conn.framer.WriteFrame(dataFrame)
 }
@@ -153,23 +154,27 @@ func (s *Stream) WaitTimeout(timeout time.Duration) error {
 // Close closes the stream by sending an empty data frame with the
 // finish flag set, indicating this side is finished with the stream.
 func (s *Stream) Close() error {
-	s.dataLock.Lock()
 	select {
 	case <-s.closeChan:
 		// Stream is now fully closed
 		s.conn.removeStream(s)
 	default:
-		close(s.dataChan)
-		close(s.closeChan)
+		break
 	}
-	s.dataLock.Unlock()
-
 	return s.WriteData([]byte{}, true)
 }
 
 // Reset sends a reset frame, putting the stream into the fully closed state.
 func (s *Stream) Reset() error {
 	s.conn.removeStream(s)
+	return s.resetStream()
+}
+
+func (s *Stream) resetStream() error {
+	// Always call closeRemoteChannels, even if s.finished is already true.
+	// This makes it so that stream.Close() followed by stream.Reset() allows
+	// stream.Read() to unblock.
+	s.closeRemoteChannels()
 
 	s.finishLock.Lock()
 	if s.finished {
@@ -179,22 +184,10 @@ func (s *Stream) Reset() error {
 	s.finished = true
 	s.finishLock.Unlock()
 
-	s.dataLock.Lock()
-	select {
-	case <-s.closeChan:
-		break
-	default:
-		close(s.dataChan)
-		close(s.closeChan)
-	}
-	s.dataLock.Unlock()
-
 	resetFrame := &spdy.RstStreamFrame{
 		StreamId: s.streamId,
 		Status:   spdy.Cancel,
 	}
-	s.conn.writeLock.Lock()
-	defer s.conn.writeLock.Unlock()
 	return s.conn.framer.WriteFrame(resetFrame)
 }
 
@@ -322,4 +315,14 @@ func (s *Stream) SetReadDeadline(t time.Time) error {
 
 func (s *Stream) SetWriteDeadline(t time.Time) error {
 	return s.conn.conn.SetWriteDeadline(t)
+}
+
+func (s *Stream) closeRemoteChannels() {
+	s.closeLock.Lock()
+	defer s.closeLock.Unlock()
+	select {
+	case <-s.closeChan:
+	default:
+		close(s.closeChan)
+	}
 }
