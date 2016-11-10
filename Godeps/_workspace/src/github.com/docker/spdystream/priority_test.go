@@ -1,10 +1,11 @@
 package spdystream
 
 import (
-	"github.com/zhgwenming/gbalancer/Godeps/_workspace/src/code.google.com/p/go.net/spdy"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/docker/spdystream/spdy"
 )
 
 func TestPriorityQueueOrdering(t *testing.T) {
