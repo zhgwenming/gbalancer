@@ -273,7 +273,10 @@ func (s *Scheduler) RemoveBackend(addr string) {
 		}
 		for i := 0; i < int(b.tunnels); i++ {
 			oneTunnel := b.tunnel[i]
-			oneTunnel.Close()
+			if nil != &oneTunnel {
+				log.Printf("balancer: Close tunnel %v of Backend %v\n", oneTunnel, b)
+				oneTunnel.Close()
+			}
 		}
 		delete(s.backends, b.address)
 	} else {
